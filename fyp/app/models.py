@@ -5,3 +5,6 @@ from django.db import models
 class Stock(models.Model):
     stockName = models.CharField(max_length=255)
     stockTicker = models.CharField(max_length=10)
+
+    def __str__(self):
+        return f"{self.stockName} {self.stockTicker}"
