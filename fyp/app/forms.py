@@ -1,5 +1,5 @@
 from django import forms
-from .models import Asset, Portfolio
+from .models import Asset, Portfolio, Profile
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.forms import inlineformset_factory
@@ -10,6 +10,11 @@ class UserRegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['risk_aversion']
 
 class AssetForm(forms.ModelForm):
     class Meta:

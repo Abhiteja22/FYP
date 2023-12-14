@@ -1,4 +1,12 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
 {% for portfolio in portfolios %}
-  <p>{{ portfolio.name }}</p>
+<p>
+  <a href="{% url 'portfolio_update' pk=portfolio.pk %}">
+    {{ portfolio.name }}
+  </a>
   <!-- Add other portfolio details here -->
+</p>
 {% endfor %}
+{% endblock %}

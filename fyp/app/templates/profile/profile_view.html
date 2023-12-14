@@ -1,0 +1,9 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+  <h2>Profile</h2>
+  <p>Username: {{ profile.user.username }}</p>
+  <p>Risk Aversion: {{ profile.risk_aversion }}</p>
+  <!-- Display other profile details -->
+  <a href="{% url 'profile_update' %}">Edit Profile</a>
+{% endblock %}

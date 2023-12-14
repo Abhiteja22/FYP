@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import Stock, Portfolio
-from .forms import AssetFormSet, UserRegisterForm, PortfolioForm
+from .forms import AssetFormSet, ProfileUpdateForm, UserRegisterForm, PortfolioForm
 
 # Create your views here.
 
@@ -46,6 +46,23 @@ def register(request):
     return render(request, 'registration/register.html', {'form': form})
 
 @login_required
+def profile_view(request):
+    profile = request.user.profile
+    return render(request, 'profile/profile_view.html', {'profile': profile})
+
+@login_required
+def profile_update(request):
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, instance=request.user.profile)
+        if form.is_valid():
+            form.save()
+            # Redirect to profile view or add a success message
+            return redirect('profile_view')
+    else:
+        form = ProfileUpdateForm(instance=request.user.profile)
+    return render(request, 'profile/profile_update.html', {'form': form})
+
+@login_required
 def portfolio_create(request):
     if request.method == 'POST':
         form = PortfolioForm(request.POST)
@@ -70,7 +87,7 @@ def portfolio_update(request, pk):
         form = PortfolioForm(request.POST, instance=portfolio)
         if form.is_valid():
             form.save()
-            return redirect('portfolio_detail', pk=portfolio.pk)
+            return redirect('portfolio_list')
     else:
         form = PortfolioForm(instance=portfolio)
     return render(request, 'portfolio/portfolio_form.html', {'form': form})
