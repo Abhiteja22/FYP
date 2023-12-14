@@ -35,6 +35,8 @@ LOGIN_REDIRECT_URL = 'main'
 
 LOGOUT_REDIRECT_URL = 'login'
 
+IEX_CLOUD_API_KEY = "TODO"
+
 # Application definition
 
 INSTALLED_APPS = [

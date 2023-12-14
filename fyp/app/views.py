@@ -1,8 +1,10 @@
+import requests
 from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from .models import Stock, Portfolio
 from .forms import AssetFormSet, ProfileUpdateForm, UserRegisterForm, PortfolioForm
 
@@ -97,3 +99,39 @@ def portfolio_update(request, pk):
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(user=request.user)
     return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
+
+def get_asset_list_data():
+    # This is a placeholder URL. You will need to use the endpoint provided by your financial data API.
+    url = f"https://cloud.iexapis.com/stable/ref-data/symbols?token={settings.IEX_CLOUD_API_KEY}"
+
+    # Replace 'YourApiKey' with the actual key, ideally fetched from your environment or Django settings
+    headers = {
+        "Authorization": f"Bearer {settings.FINANCIAL_DATA_API_KEY}"
+    }
+
+    # Make the API request
+    response = requests.get(url, headers=headers)
+
+     # Check if the request was successful
+    if response.status_code == 200:
+        # Parse the response JSON data into a Python dictionary
+        data = response.json()
+
+        # Extract the list of top stocks. The structure depends on the API response format.
+        # Here, I'm assuming 'data' is a list of dictionaries with stock info
+        top_stocks = data.get('top500', [])
+        
+        # Format the data as needed for your application
+        # For example, if the data needs to be sorted or filtered
+        
+        return top_stocks
+    else:
+        # Handle errors or unsuccessful status codes
+        # You may want to log the error and return an empty list or raise an exception
+        return []
+
+@login_required
+def asset_list(request):
+    top_assets_data = get_asset_list_data()
+    context = {'top_assets': top_assets_data}
+    return render(request, 'asset/asset_list.html', context)
