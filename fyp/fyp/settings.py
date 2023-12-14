@@ -29,6 +29,11 @@ ALLOWED_HOSTS = []
 
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
+LOGIN_URL = 'login'
+
+LOGIN_REDIRECT_URL = 'main'
+
+LOGOUT_REDIRECT_URL = 'login'
 
 # Application definition
 

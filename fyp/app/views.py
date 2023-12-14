@@ -4,10 +4,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import Stock, Portfolio
-from .forms import UserRegisterForm, PortfolioForm
+from .forms import AssetFormSet, UserRegisterForm, PortfolioForm
 
 # Create your views here.
 
+@login_required
 def main(request):
     template = loader.get_template("main.html")
     return HttpResponse(template.render())
@@ -48,17 +49,21 @@ def register(request):
 def portfolio_create(request):
     if request.method == 'POST':
         form = PortfolioForm(request.POST)
-        if form.is_valid():
+        formset = AssetFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
             portfolio = form.save(commit=False)
             portfolio.user = request.user
             portfolio.save()
-            form.save_m2m()  # For saving ManyToMany relations
-            return redirect('portfolio_detail', pk=portfolio.pk)
+            formset.instance = portfolio
+            formset.save()
+            return redirect('portfolio_list')
     else:
         form = PortfolioForm()
-    return render(request, 'portfolio/portfolio_form.html', {'form': form})
+        formset = AssetFormSet()
+    return render(request, 'portfolio/portfolio_form.html', {'form': form, 'formset': formset})
 
-@login_required
+# TODO
+@login_required 
 def portfolio_update(request, pk):
     portfolio = Portfolio.objects.get(pk=pk, user=request.user)
     if request.method == 'POST':

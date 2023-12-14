@@ -1,15 +1,10 @@
-{% extends "master.html" %}
-
-{% block title %}
-  Stocks App
-{% endblock %}
-
+{% extends 'base_generic.html' %}
 
 {% block content %}
-  <h1>Stocks App</h1>
-
-  <h3>Stocks</h3>
-  
-  <p>Check out all our <a href="stocks/">stocks</a></p>
-  
+  <h2>Welcome, {{ request.user.username }}</h2>
+  <ul>
+    <li><a href="{% url 'portfolio_list' %}">View Portfolio</a></li>
+    <li><a href="{% url 'portfolio_create' %}">Create Portfolio</a></li>
+  </ul>
+  <a href="{% url 'logout' %}">Logout</a>
 {% endblock %}

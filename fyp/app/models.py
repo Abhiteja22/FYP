@@ -20,29 +20,29 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
-
-class Asset(models.Model):
-    name = models.CharField(max_length=100)
-    type = models.CharField(max_length=100)  # E.g., stocks, bonds, etc.
-    ticker = models.CharField(max_length=10)
-    #value = models.DecimalField(max_digits=10, decimal_places=2) # Adjust this field later
-    allocation = models.DecimalField(max_digits=5, decimal_places=2)  # Percentage of the asset in the portfolio
-    alpha = models.DecimalField(max_digits=5, decimal_places=2)
-    beta = models.DecimalField(max_digits=5, decimal_places=2)
-    # historical_performance = models.JSONField(null=True, blank=True)
-    # JSONField can be useful to store a variety of performance data without creating a complex relational structure
-
-    def __str__(self):
-        return self.name
     
 class Portfolio(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    assets = models.ManyToManyField('Asset', related_name='portfolios')
     # risk = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True) #Adjust this value later
     alpha = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     beta = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     creation_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+    
+class Asset(models.Model):
+    name = models.CharField(max_length=100)
+    type = models.CharField(max_length=100)  # E.g., stocks, bonds, etc.
+    ticker = models.CharField(max_length=10, null=True)
+    #value = models.DecimalField(max_digits=10, decimal_places=2) # Adjust this field later
+    allocation = models.DecimalField(max_digits=5, decimal_places=2)  # Percentage of the asset in the portfolio
+    alpha = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    beta = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    portfolio = models.ForeignKey(Portfolio, related_name='assets', on_delete=models.CASCADE, null=True)
+    # historical_performance = models.JSONField(null=True, blank=True)
+    # JSONField can be useful to store a variety of performance data without creating a complex relational structure
 
     def __str__(self):
         return self.name
