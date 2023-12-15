@@ -1,10 +1,21 @@
 {% extends 'base_generic.html' %}
 
 {% block content %}
-  <h2>Top 500 Stocks</h2>
-  <ul>
-    {% for stock in top_stocks %}
-      <li>{{ stock.name }} - {{ stock.symbol }} - {{ stock.price }} - {{ stock.change }}</li>
-    {% endfor %}
-  </ul>
+  <h2>Stock Symbols</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Stock Name</th>
+        <th>Ticker</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for stock in stocks %}
+      <tr>
+        <td>{{ stock.name }}</td>
+        <td>{{ stock.symbol }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

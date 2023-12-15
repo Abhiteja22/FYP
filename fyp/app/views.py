@@ -129,9 +129,38 @@ def get_asset_list_data():
         # Handle errors or unsuccessful status codes
         # You may want to log the error and return an empty list or raise an exception
         return []
+    
+def get_stock_symbols(exchange='NYSE'):
+    """Fetch a list of stock symbols from the specified exchange."""
+    api_key = settings.ALPHA_VANTAGE_API_KEY
+    base_url = "https://www.alphavantage.co/query"
+    params = {
+        "function": "LISTING_STATUS",
+        "apikey": api_key
+    }
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        # Assume the response is a CSV file (Alpha Vantage returns CSV for this function)
+        lines = response.text.strip().split("\n")
+        symbols = [line.split(',')[0] for line in lines[1:]]  # Skip the header row
+        return symbols
+    else:
+        return []
+    
+def fetch_stock_symbols():
+    url = "https://cloud.iexapis.com/stable/ref-data/symbols"
+    params = {
+        "token": settings.IEX_API_KEY
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()  # A list of dictionaries with stock info
+    else:
+        return []
 
 @login_required
 def asset_list(request):
-    top_assets_data = get_asset_list_data()
-    context = {'top_assets': top_assets_data}
+    top_assets_data = fetch_stock_symbols()
+    print(top_assets_data)
+    context = {'stocks': top_assets_data}
     return render(request, 'asset/asset_list.html', context)
