@@ -1,0 +1,13 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+  <h2>Asset Details: {{ symbol }} {{ name }}</h2>
+  {% if asset %}
+  <p>Current Price: {{ asset.iexRealtimePrice }}</p>
+  <p>Average Total Volume: {{ asset.avgTotalVolume }}</p>
+  <p>Price Earnings Ratio: {{ asset.peRatio }}</p>
+  <!-- Display other financial metrics as needed -->
+  {% else %}
+  <p>Details for this asset are not available at the moment.</p>
+  {% endif %}
+{% endblock %}

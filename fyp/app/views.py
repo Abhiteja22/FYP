@@ -1,12 +1,11 @@
-import requests
 from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.conf import settings
 from .models import Stock, Portfolio
 from .forms import AssetFormSet, ProfileUpdateForm, UserRegisterForm, PortfolioForm
+from .utils import fetch_stock_symbols, fetch_asset_details
 
 # Create your views here.
 
@@ -100,67 +99,14 @@ def portfolio_list(request):
     portfolios = Portfolio.objects.filter(user=request.user)
     return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
 
-def get_asset_list_data():
-    # This is a placeholder URL. You will need to use the endpoint provided by your financial data API.
-    url = f"https://cloud.iexapis.com/stable/ref-data/symbols?token={settings.IEX_CLOUD_API_KEY}"
-
-    # Replace 'YourApiKey' with the actual key, ideally fetched from your environment or Django settings
-    headers = {
-        "Authorization": f"Bearer {settings.FINANCIAL_DATA_API_KEY}"
-    }
-
-    # Make the API request
-    response = requests.get(url, headers=headers)
-
-     # Check if the request was successful
-    if response.status_code == 200:
-        # Parse the response JSON data into a Python dictionary
-        data = response.json()
-
-        # Extract the list of top stocks. The structure depends on the API response format.
-        # Here, I'm assuming 'data' is a list of dictionaries with stock info
-        top_stocks = data.get('top500', [])
-        
-        # Format the data as needed for your application
-        # For example, if the data needs to be sorted or filtered
-        
-        return top_stocks
-    else:
-        # Handle errors or unsuccessful status codes
-        # You may want to log the error and return an empty list or raise an exception
-        return []
-    
-def get_stock_symbols(exchange='NYSE'):
-    """Fetch a list of stock symbols from the specified exchange."""
-    api_key = settings.ALPHA_VANTAGE_API_KEY
-    base_url = "https://www.alphavantage.co/query"
-    params = {
-        "function": "LISTING_STATUS",
-        "apikey": api_key
-    }
-    response = requests.get(base_url, params=params)
-    if response.status_code == 200:
-        # Assume the response is a CSV file (Alpha Vantage returns CSV for this function)
-        lines = response.text.strip().split("\n")
-        symbols = [line.split(',')[0] for line in lines[1:]]  # Skip the header row
-        return symbols
-    else:
-        return []
-    
-def fetch_stock_symbols():
-    url = "https://cloud.iexapis.com/stable/ref-data/symbols"
-    params = {
-        "token": settings.IEX_API_KEY
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json()  # A list of dictionaries with stock info
-    else:
-        return []
-
 @login_required
 def asset_list(request):
     top_assets_data = fetch_stock_symbols()
     print(top_assets_data)
     context = {'stocks': top_assets_data}
     return render(request, 'asset/asset_list.html', context)
+
+def asset_detail_view(request, symbol):
+    asset_details = fetch_asset_details(symbol)  # Fetch detailed info like price, volume, etc.
+    print(asset_details)
+    return render(request, 'asset/asset_detail.html', {'asset': asset_details, 'symbol': symbol})

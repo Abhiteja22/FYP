@@ -1,6 +1,7 @@
 {% extends 'base_generic.html' %}
 
 {% block content %}
+
   <h2>Stock Symbols</h2>
   <table>
     <thead>
@@ -10,11 +11,11 @@
       </tr>
     </thead>
     <tbody>
-      {% for stock in stocks %}
-      <tr>
-        <td>{{ stock.name }}</td>
-        <td>{{ stock.symbol }}</td>
-      </tr>
+        {% for stock in stocks %}
+        <tr>
+          <td><a href="{% url 'asset_detail' stock.symbol %}">{{ stock.name }}</a></td>
+          <td>{{ stock.symbol }}</td>
+        </tr>
       {% endfor %}
     </tbody>
   </table>
