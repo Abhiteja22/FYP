@@ -1,11 +1,15 @@
 {% extends 'base_generic.html' %}
 
 {% block content %}
-  <h2>Asset Details: {{ symbol }} {{ name }}</h2>
+  <h2>Asset Details: {{ symbol }} {{ asset.Name }}</h2>
   {% if asset %}
-  <p>Current Price: {{ asset.iexRealtimePrice }}</p>
-  <p>Average Total Volume: {{ asset.avgTotalVolume }}</p>
-  <p>Price Earnings Ratio: {{ asset.peRatio }}</p>
+  <p>Current Price: {{ asset.Asset_price }}</p>
+  <p>Beta: {{ asset.Beta }}</p>
+  <p>Price Earnings Ratio: {{ asset.PERatio }}</p>
+  <p>Expected Asset Return: {{ asset.Expected_return }}</p>
+  <p>Expected Market Return: {{ asset.Expected_market_return }}</p>
+  <p>Expected Risk free Return: {{ asset.Risk_free_rate }}</p>
+  <p>Standard Deviation: {{ asset.Std_dev }}</p>
   <!-- Display other financial metrics as needed -->
   {% else %}
   <p>Details for this asset are not available at the moment.</p>
