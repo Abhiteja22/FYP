@@ -61,6 +61,24 @@ def get_expected_market_return(symbol):
         return None
     return None
 
+def get_asset_beta(symbol):
+    url = "https://www.alphavantage.co/query"
+    params = {
+        "function": "OVERVIEW",
+        "symbol": symbol,
+        "outputsize": "full",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if data and "Beta" in data:
+            return data["Beta"]
+    else:
+        return None
+    return None
+
+
 def get_expected_stock_return(symbol, risk_free_rate, expected_market_return):
     url = "https://www.alphavantage.co/query"
     params = {
@@ -135,3 +153,61 @@ def fetch_asset_details(symbol):
         return data # JSON with detailed stock info
     else:
         return None
+    
+class PortfolioDetails:
+    def __init__(self):
+        self.assets_details = []  # To store details of each asset
+        self.total_value = 0      # Total value of the portfolio
+        self.expected_return = 0  # Expected return of the portfolio
+        self.standard_deviation = 0  # Standard deviation of the portfolio
+        # Add other overall portfolio metrics as needed
+
+    class AssetDetails:
+        def __init__(self, symbol, quantity, price, std_dev, expected_return, beta, weight):
+            self.symbol = symbol
+            self.quantity = quantity
+            self.price = price
+            self.std_dev = std_dev
+            self.expected_return = expected_return
+            self.beta = beta
+            self.weight = weight
+
+def calculate_portfolio_details(portfolioAssets):
+    portfolio_details = PortfolioDetails()
+
+    # Placeholder for obtaining asset details
+    for asset in portfolioAssets:
+        # Here, you need to fetch or calculate the asset's price, std_dev, expected_return, and beta
+        # For example, using a function get_asset_data(symbol) that returns these values
+        quantity = asset.quantity
+
+        price = get_asset_price(asset.asset_ticker)
+        std_dev = get_stock_stddev(asset.asset_ticker)
+        risk_free_rate = get_risk_free_rate()
+        expected_market_return = get_expected_market_return('SPY')
+        expected_return = get_expected_stock_return(asset.asset_ticker, risk_free_rate, expected_market_return)
+        beta = get_asset_beta(asset.asset_ticker)
+
+        # Calculate the total value of the asset in the portfolio
+        total_asset_value = float(price) * asset.quantity
+        portfolio_details.total_value += total_asset_value
+
+        # Append the asset details to the portfolio
+        asset_details = PortfolioDetails.AssetDetails(
+            asset.asset_ticker, quantity, price, std_dev, expected_return, beta, 0  # Weight to be calculated later
+        )
+        portfolio_details.assets_details.append(asset_details)
+
+    # Calculate weight, expected portfolio return, and standard deviation
+    for asset_detail in portfolio_details.assets_details:
+        # Calculate weight of each asset
+        asset_detail.weight = (asset_detail.price * asset.quantity) / portfolio_details.total_value
+
+        # Add to expected portfolio return
+        portfolio_details.expected_return += asset_detail.expected_return * asset_detail.weight
+
+        # Portfolio standard deviation calculation would depend on the correlations between assets
+        # This can be a complex calculation and might require historical price data to compute
+        # portfolio_details.standard_deviation += ...
+
+    return portfolio_details

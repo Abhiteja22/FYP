@@ -37,15 +37,22 @@ class Asset(models.Model):
     type = models.CharField(max_length=100)  # E.g., stocks, bonds, etc.
     ticker = models.CharField(max_length=10, null=True)
     #value = models.DecimalField(max_digits=10, decimal_places=2) # Adjust this field later
-    allocation = models.DecimalField(max_digits=5, decimal_places=2)  # Percentage of the asset in the portfolio
+    # allocation = models.DecimalField(max_digits=5, decimal_places=2)  # Percentage of the asset in the portfolio
     alpha = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     beta = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    portfolio = models.ForeignKey(Portfolio, related_name='assets', on_delete=models.CASCADE, null=True)
+    # portfolio = models.ForeignKey(Portfolio, related_name='assets', on_delete=models.CASCADE, null=True)
     # historical_performance = models.JSONField(null=True, blank=True)
     # JSONField can be useful to store a variety of performance data without creating a complex relational structure
 
     def __str__(self):
         return self.name
+    
+class PortfolioAsset(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+    asset_ticker = models.CharField(max_length=10, null=True)
+    # asset_name = models.CharField(max_length=100)
+    # asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
 
 # Signal to create or update Profile model whenever User model is updated
 @receiver(post_save, sender=User)

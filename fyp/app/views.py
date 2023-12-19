@@ -3,9 +3,9 @@ from django.template import loader
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Stock, Portfolio
-from .forms import AssetFormSet, ProfileUpdateForm, UserRegisterForm, PortfolioForm
-from .utils import fetch_stock_symbols, fetch_asset_details
+from .models import PortfolioAsset, Stock, Portfolio
+from .forms import AddToPortfolioForm, ProfileUpdateForm, UserRegisterForm, PortfolioForm
+from .utils import calculate_portfolio_details, fetch_stock_symbols, fetch_asset_details
 
 # Create your views here.
 
@@ -67,18 +67,14 @@ def profile_update(request):
 def portfolio_create(request):
     if request.method == 'POST':
         form = PortfolioForm(request.POST)
-        formset = AssetFormSet(request.POST)
         if form.is_valid() and formset.is_valid():
             portfolio = form.save(commit=False)
             portfolio.user = request.user
             portfolio.save()
-            formset.instance = portfolio
-            formset.save()
             return redirect('portfolio_list')
     else:
         form = PortfolioForm()
-        formset = AssetFormSet()
-    return render(request, 'portfolio/portfolio_form.html', {'form': form, 'formset': formset})
+    return render(request, 'portfolio/portfolio_form.html', {'form': form})
 
 # TODO
 @login_required 
@@ -91,12 +87,17 @@ def portfolio_update(request, pk):
             return redirect('portfolio_list')
     else:
         form = PortfolioForm(instance=portfolio)
-    return render(request, 'portfolio/portfolio_form.html', {'form': form})
+    return render(request, 'portfolio/portfolio_form.html', {'form': form, 'portfolio': portfolio})
 
 # To view portfolios
 @login_required
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(user=request.user)
+    # Attach PortfolioAsset instances to each portfolio
+    for portfolio in portfolios:
+        portfolio.assets = PortfolioAsset.objects.filter(portfolio=portfolio)
+        portfolio.portfolio_details = calculate_portfolio_details(portfolio.assets)
+    
     return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
 
 @login_required
@@ -108,5 +109,17 @@ def asset_list(request):
 
 def asset_detail_view(request, symbol):
     asset_details = fetch_asset_details(symbol)  # Fetch detailed info like price, volume, etc.
-    print(asset_details)
-    return render(request, 'asset/asset_detail.html', {'asset': asset_details, 'symbol': symbol})
+    if request.method == "POST":
+        form = AddToPortfolioForm(request.POST)
+        if form.is_valid():
+            portfolio_asset = form.save(commit=False)
+            portfolio_asset.asset_ticker = symbol
+            portfolio_asset.save()
+            # Redirect to a success page or the asset detail page
+            return redirect('portfolio_list')
+    else:
+        form = AddToPortfolioForm()
+        # Filter portfolios to those owned by the user
+        form.fields['portfolio'].queryset = Portfolio.objects.filter(user=request.user)
+    return render(request, 'asset/asset_detail.html', {'asset': asset_details, 'symbol': symbol, 'form': form})
+    # asset = Asset.objects.get(symbol=symbol)

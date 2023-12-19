@@ -8,5 +8,40 @@
   </a>
   <!-- Add other portfolio details here -->
 </p>
+<h4>Assets:</h4>
+    <table>
+        <tr>
+            <th>Asset Symbol</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Standard Deviation</th>
+            <th>Expected Return</th>
+            <th>Beta</th>
+            <th>Weight</th>
+            <!-- Add other headers if necessary -->
+        </tr>
+        {% for asset in portfolio.portfolio_details.asset_details %}
+            <tr>
+                <td>{{ asset.symbol }}</td>
+                <td>{{ asset.quantity }}</td>
+                <td>{{ asset.price }}</td>
+                <td>{{ asset.std_dev }}</td>
+                <td>{{ asset.expected_return }}</td>
+                <td>{{ asset.beta }}</td>
+                <td>{{ asset.weight }}</td>
+                <!-- Display other asset details -->
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="2">No assets in this portfolio</td>
+            </tr>
+        {% endfor %}
+    </table>
+<h4>Portfolio Details:</h4>
+<p>Portfolio Total Value: {{ portfolio.portfolio_details.total_value }}</p>
+<p>Portfolio Expected Return: {{ portfolio.portfolio_details.expected_return }}</p>
+<p>Portfolio Standard Deviation: {{ portfolio.portfolio_details.standard_deviation }}</p>
+{% empty %}
+    <p>No portfolios available.</p>
 {% endfor %}
 {% endblock %}
