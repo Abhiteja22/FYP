@@ -96,7 +96,16 @@ def portfolio_list(request):
     # Attach PortfolioAsset instances to each portfolio
     for portfolio in portfolios:
         portfolio.assets = PortfolioAsset.objects.filter(portfolio=portfolio)
-        portfolio.portfolio_details = calculate_portfolio_details(portfolio.assets)
+        combined_assets = {}
+        for asset in portfolio.assets:
+            if asset.asset_ticker in combined_assets:
+                combined_assets[asset.asset_ticker] += asset.quantity
+            else:
+                combined_assets[asset.asset_ticker] = asset.quantity
+
+        portfolio.portfolio_details = calculate_portfolio_details(combined_assets)
+
+    print(portfolios)
     
     return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
 

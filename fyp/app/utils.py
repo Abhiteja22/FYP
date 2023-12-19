@@ -1,6 +1,8 @@
+from decimal import Decimal
 import numpy as np
 import requests
 from django.conf import settings
+from .models import PortfolioDetails
 
 def fetch_stock_symbols():
     url = "https://cloud.iexapis.com/stable/ref-data/symbols"
@@ -20,7 +22,8 @@ def get_risk_free_rate():
         "function": "TREASURY_YIELD",
         "interval": "monthly",
         "maturity": "10year",
-        "apikey": settings.ALPHA_VANTAGE_API_KEY
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
@@ -39,7 +42,8 @@ def get_expected_market_return(symbol):
         "function": "TIME_SERIES_DAILY",
         "symbol": symbol,
         "outputsize": "full",
-        "apikey": settings.ALPHA_VANTAGE_API_KEY
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
@@ -67,7 +71,8 @@ def get_asset_beta(symbol):
         "function": "OVERVIEW",
         "symbol": symbol,
         "outputsize": "full",
-        "apikey": settings.ALPHA_VANTAGE_API_KEY
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
@@ -85,7 +90,8 @@ def get_expected_stock_return(symbol, risk_free_rate, expected_market_return):
         "function": "OVERVIEW",
         "symbol": symbol,
         "outputsize": "full",
-        "apikey": settings.ALPHA_VANTAGE_API_KEY
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
     }
     response = requests.get(url, params=params)
     if response.status_code == 200 and risk_free_rate and expected_market_return:
@@ -99,13 +105,15 @@ def get_expected_stock_return(symbol, risk_free_rate, expected_market_return):
         return None
     
 def get_stock_stddev(symbol):
-    url = "https://www.alphavantage.co/timeseries/analytics"
+    url = "https://alphavantageapi.co/timeseries/analytics"
     params = {
         "SYMBOLS": symbol,
-        "RANGE": "2023-07-01&RANGE=2023-08-31",
+        "RANGE": "2023-07-01",
+        "RANGE": "2023-08-31",
         "INTERVAL": "DAILY",
         "CALCULATIONS": "STDDEV",
-        "apikey": settings.ALPHA_VANTAGE_API_KEY
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
@@ -136,7 +144,7 @@ def fetch_asset_details(symbol):
     # Construct the URL for detailed stock info
     # This example assumes you're using IEX Cloud's API; adjust as needed for your actual data source
     #url = f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={settings.IEX_API_KEY}"
-    url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={settings.ALPHA_VANTAGE_API_KEY}"
+    url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={settings.ALPHA_VANTAGE_API_KEY}&entitlement=delayed"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -154,60 +162,84 @@ def fetch_asset_details(symbol):
     else:
         return None
     
-class PortfolioDetails:
-    def __init__(self):
-        self.assets_details = []  # To store details of each asset
-        self.total_value = 0      # Total value of the portfolio
-        self.expected_return = 0  # Expected return of the portfolio
-        self.standard_deviation = 0  # Standard deviation of the portfolio
-        # Add other overall portfolio metrics as needed
+def get_portfolio_stddev(asset_details):
+    asset_symbols = [asset.symbol for asset in asset_details]
+    symbols = ','.join(asset_symbols)
+    url = "https://alphavantageapi.co/timeseries/analytics"
+    params = {
+        "SYMBOLS": symbols,
+        "RANGE": "2023-07-01", # Update range
+        "RANGE": "2023-08-31",
+        "INTERVAL": "DAILY",
+        "CALCULATIONS": "COVARIANCE",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params)
+    print(response)
+    if response.status_code == 200:
+        data = response.json()
+        size = len(data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["index"])
+        cov_matrix = np.zeros((size, size))
+        for i in range(size):
+            for j in range(i + 1):
+                cov_matrix[i, j] = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"][i][j]
+                cov_matrix[j, i] = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"][i][j]
 
-    class AssetDetails:
-        def __init__(self, symbol, quantity, price, std_dev, expected_return, beta, weight):
-            self.symbol = symbol
-            self.quantity = quantity
-            self.price = price
-            self.std_dev = std_dev
-            self.expected_return = expected_return
-            self.beta = beta
-            self.weight = weight
 
+        # Step 2: Define portfolio weights
+        weights_list = [asset.weight for asset in asset_details]
+        weights = np.array(weights_list)
+
+        decimal_cov_matrix = [[Decimal(value) for value in row] for row in cov_matrix]
+
+        # Step 3: Calculate portfolio variance
+        portfolio_variance = np.dot(weights, np.dot(decimal_cov_matrix, weights.T))
+        portfolio_stddev = float(portfolio_variance) ** 0.5
+
+        return portfolio_stddev
+    else:
+        return None
+    
 def calculate_portfolio_details(portfolioAssets):
     portfolio_details = PortfolioDetails()
 
-    # Placeholder for obtaining asset details
-    for asset in portfolioAssets:
+    for asset_ticker, quantity in portfolioAssets.items():
         # Here, you need to fetch or calculate the asset's price, std_dev, expected_return, and beta
         # For example, using a function get_asset_data(symbol) that returns these values
-        quantity = asset.quantity
+        quan = quantity
 
-        price = get_asset_price(asset.asset_ticker)
-        std_dev = get_stock_stddev(asset.asset_ticker)
+        price = get_asset_price(asset_ticker)
+        std_dev = get_stock_stddev(asset_ticker)
         risk_free_rate = get_risk_free_rate()
         expected_market_return = get_expected_market_return('SPY')
-        expected_return = get_expected_stock_return(asset.asset_ticker, risk_free_rate, expected_market_return)
-        beta = get_asset_beta(asset.asset_ticker)
+        expected_return = get_expected_stock_return(asset_ticker, risk_free_rate, expected_market_return)
+        beta = get_asset_beta(asset_ticker)
 
         # Calculate the total value of the asset in the portfolio
-        total_asset_value = float(price) * asset.quantity
+        total_asset_value = Decimal(price) * quan
         portfolio_details.total_value += total_asset_value
 
         # Append the asset details to the portfolio
         asset_details = PortfolioDetails.AssetDetails(
-            asset.asset_ticker, quantity, price, std_dev, expected_return, beta, 0  # Weight to be calculated later
+            asset_ticker, quan, price, std_dev, expected_return, beta, 0  # Weight to be calculated later
         )
         portfolio_details.assets_details.append(asset_details)
 
     # Calculate weight, expected portfolio return, and standard deviation
     for asset_detail in portfolio_details.assets_details:
         # Calculate weight of each asset
-        asset_detail.weight = (asset_detail.price * asset.quantity) / portfolio_details.total_value
+        asset_detail.weight = (Decimal(asset_detail.price) * asset_detail.quantity) / portfolio_details.total_value
 
         # Add to expected portfolio return
-        portfolio_details.expected_return += asset_detail.expected_return * asset_detail.weight
+        portfolio_details.expected_return += Decimal(asset_detail.expected_return) * asset_detail.weight
+    
+    portfolio_details.standard_deviation = get_portfolio_stddev(portfolio_details.assets_details)
 
-        # Portfolio standard deviation calculation would depend on the correlations between assets
-        # This can be a complex calculation and might require historical price data to compute
-        # portfolio_details.standard_deviation += ...
+    print(type(portfolio_details.standard_deviation))
+    portfolio_details.total_value = f"USD ${portfolio_details.total_value:.2f}"
+    portfolio_details.expected_return = f"{portfolio_details.expected_return:.3%}"
+    if portfolio_details.standard_deviation is not None:
+        portfolio_details.standard_deviation = f"{float(portfolio_details.standard_deviation):.3%}"
 
     return portfolio_details
