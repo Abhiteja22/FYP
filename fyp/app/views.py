@@ -1,11 +1,11 @@
 from django.http import HttpResponse
 from django.template import loader
-from django.shortcuts import render, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import PortfolioAsset, Stock, Portfolio
 from .forms import AddToPortfolioForm, ProfileUpdateForm, UserRegisterForm, PortfolioForm
-from .utils import calculate_portfolio_details, fetch_stock_symbols, fetch_asset_details
+from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_stock_symbols, fetch_asset_details
 
 # Create your views here.
 
@@ -95,7 +95,7 @@ def portfolio_list(request):
     portfolios = Portfolio.objects.filter(user=request.user)
     # Attach PortfolioAsset instances to each portfolio
     for portfolio in portfolios:
-        portfolio.assets = PortfolioAsset.objects.filter(portfolio=portfolio)
+        portfolio.assets = portfolio.assets.all()
         combined_assets = {}
         for asset in portfolio.assets:
             if asset.asset_ticker in combined_assets:
@@ -132,3 +132,15 @@ def asset_detail_view(request, symbol):
         form.fields['portfolio'].queryset = Portfolio.objects.filter(user=request.user)
     return render(request, 'asset/asset_detail.html', {'asset': asset_details, 'symbol': symbol, 'form': form})
     # asset = Asset.objects.get(symbol=symbol)
+
+def portfolio_suggest_weightage(request, portfolio_id):
+    # portfolio = Portfolio.objects.get(id=portfolio_id) # ORIGINAL WAY TO GET Portfolio
+    # Get the portfolio or return a 404 response if not found
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
+    portfolio_assets = portfolio.assets.all()
+    weights = calculate_optimal_weights_portfolio(portfolio_assets)
+    context = {
+        'portfolio': portfolio,
+        'weights': weights,
+    }
+    return render(request, 'portfolio/portfolio_weights.html', context)

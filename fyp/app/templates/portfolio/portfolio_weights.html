@@ -1,0 +1,20 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+<h2>Optimal Weights for Portfolio: {{ portfolio.name }}</h2>
+
+<table>
+    <tr>
+        <th>Asset</th>
+        <th>Optimal Weight</th>
+    </tr>
+    {% for asset, weight in weights.items %}
+    <tr>
+        <td>{{ asset }}</td>
+        <td>{{ weight|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'portfolio_list' %}">Back to Portfolio List</a>
+{% endblock %}

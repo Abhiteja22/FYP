@@ -9,6 +9,7 @@ urlpatterns = [
     path('portfolio/<int:pk>/update/', views.portfolio_update, name='portfolio_update'),
     path('profile/', views.profile_view, name='profile_view'),
     path('profile/update/', views.profile_update, name='profile_update'),
+    path('portfolio/<int:portfolio_id>/suggest_weightage/', views.portfolio_suggest_weightage, name='portfolio_suggest_weightage'),
     path('assets/', views.asset_list, name='asset_list'),
     path('assets/<str:symbol>/', views.asset_detail_view, name='asset_detail'),
     path('app/', views.app, name='app'),

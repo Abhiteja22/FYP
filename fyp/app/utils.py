@@ -1,5 +1,6 @@
 from decimal import Decimal
 import numpy as np
+from scipy.optimize import minimize
 import requests
 from django.conf import settings
 from .models import PortfolioDetails
@@ -176,7 +177,6 @@ def get_portfolio_stddev(asset_details):
         "entitlement": "delayed"
     }
     response = requests.get(url, params)
-    print(response)
     if response.status_code == 200:
         data = response.json()
         size = len(data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["index"])
@@ -246,3 +246,61 @@ def calculate_portfolio_details(portfolioAssets):
     portfolio_details.expected_return = f"{portfolio_details.expected_return:.3%}"
 
     return portfolio_details
+
+def sharpe_ratio(weights, expected_returns, cov_matrix, risk_free_rate):
+    portfolio_return = np.dot(weights, expected_returns)
+    portfolio_standard_deviation = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+    return (portfolio_return - risk_free_rate) / portfolio_standard_deviation
+
+def maximize_sharpe_ratio(expected_returns, cov_matrix, risk_free_rate):
+    num_assets = len(expected_returns)
+    args = (expected_returns, cov_matrix, risk_free_rate)
+    
+    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})  # The sum of weights is 1
+    bound = (0, 1)
+    bounds = tuple(bound for asset in range(num_assets))
+    
+    result = minimize(lambda weights: -sharpe_ratio(weights, *args), 
+                      np.array(num_assets * [1. / num_assets]), 
+                      method='SLSQP', bounds=bounds, constraints=constraints)
+
+    return result.x
+
+def get_covariance_matrix(symbols):
+    url = "https://alphavantageapi.co/timeseries/analytics"
+    params = {
+        "SYMBOLS": symbols,
+        "RANGE": "2023-07-01", # Update range
+        "RANGE": "2023-08-31",
+        "INTERVAL": "DAILY",
+        "CALCULATIONS": "COVARIANCE",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params)
+    print(response)
+    if response.status_code == 200:
+        data = response.json()
+        return data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"]
+    else:
+        return None
+
+def calculate_optimal_weights_portfolio(portfolio_assets):
+    expected_returns = []
+    asset_symbols = []
+    for asset in portfolio_assets:
+        expected_return = get_expected_stock_return(asset.asset_ticker)
+        expected_returns.append(expected_return)
+        asset_symbols.append(asset.asset_ticker)
+    
+    expected_returns = np.array(expected_returns)
+
+    symbols = ','.join(asset_symbols)
+    cov_matrix = get_covariance_matrix(symbols) # TODO: Consider order of indexes of symbols
+    cov_matrix = np.array(cov_matrix)
+
+    risk_free_rate = get_risk_free_rate()
+
+    weights = maximize_sharpe_ratio(expected_returns, cov_matrix, risk_free_rate)
+
+    return weights

@@ -42,6 +42,7 @@
 <p>Portfolio Expected Return: {{ portfolio.portfolio_details.expected_return }}</p>
 <p>Portfolio Standard Deviation: {{ portfolio.portfolio_details.standard_deviation }}</p>
 <p>Portfolio Sharpe Ratio: {{ portfolio.portfolio_details.sharpe_ratio }}</p>
+<a href="{% url 'portfolio_suggest_weightage' portfolio.id %}">Optimise Portfolio</a>
 {% empty %}
     <p>No portfolios available.</p>
 {% endfor %}

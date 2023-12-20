@@ -48,7 +48,7 @@ class Asset(models.Model):
         return self.name
     
 class PortfolioAsset(models.Model):
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE)
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='assets')
     asset_ticker = models.CharField(max_length=10, null=True)
     # asset_name = models.CharField(max_length=100)
     # asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
