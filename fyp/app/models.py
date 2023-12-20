@@ -61,6 +61,7 @@ class PortfolioDetails:
         self.total_value = 0      # Total value of the portfolio
         self.expected_return = 0  # Expected return of the portfolio
         self.standard_deviation = 0  # Standard deviation of the portfolio
+        self.sharpe_ratio = 0
         # Add other overall portfolio metrics as needed
 
     class AssetDetails:

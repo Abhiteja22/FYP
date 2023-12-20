@@ -203,6 +203,8 @@ def get_portfolio_stddev(asset_details):
     
 def calculate_portfolio_details(portfolioAssets):
     portfolio_details = PortfolioDetails()
+    risk_free_rate = get_risk_free_rate()
+    expected_market_return = get_expected_market_return('SPY')
 
     for asset_ticker, quantity in portfolioAssets.items():
         # Here, you need to fetch or calculate the asset's price, std_dev, expected_return, and beta
@@ -211,8 +213,6 @@ def calculate_portfolio_details(portfolioAssets):
 
         price = get_asset_price(asset_ticker)
         std_dev = get_stock_stddev(asset_ticker)
-        risk_free_rate = get_risk_free_rate()
-        expected_market_return = get_expected_market_return('SPY')
         expected_return = get_expected_stock_return(asset_ticker, risk_free_rate, expected_market_return)
         beta = get_asset_beta(asset_ticker)
 
@@ -236,10 +236,13 @@ def calculate_portfolio_details(portfolioAssets):
     
     portfolio_details.standard_deviation = get_portfolio_stddev(portfolio_details.assets_details)
 
-    print(type(portfolio_details.standard_deviation))
+    if portfolio_details.standard_deviation is not None:
+        portfolio_details.sharpe_ratio = (portfolio_details.expected_return - Decimal(risk_free_rate))/Decimal(portfolio_details.standard_deviation)
+        portfolio_details.standard_deviation = f"{float(portfolio_details.standard_deviation):.3%}"
+        portfolio_details.sharpe_ratio = f"{float(portfolio_details.sharpe_ratio):.5f}"
+    else:
+        portfolio_details.sharpe_ratio = "NA"
     portfolio_details.total_value = f"USD ${portfolio_details.total_value:.2f}"
     portfolio_details.expected_return = f"{portfolio_details.expected_return:.3%}"
-    if portfolio_details.standard_deviation is not None:
-        portfolio_details.standard_deviation = f"{float(portfolio_details.standard_deviation):.3%}"
 
     return portfolio_details
