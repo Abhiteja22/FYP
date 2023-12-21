@@ -264,6 +264,7 @@ def maximize_sharpe_ratio(expected_returns, cov_matrix, risk_free_rate):
                       np.array(num_assets * [1. / num_assets]), 
                       method='SLSQP', bounds=bounds, constraints=constraints)
 
+    print(result)
     return result.x
 
 def get_covariance_matrix(symbols):
@@ -281,25 +282,33 @@ def get_covariance_matrix(symbols):
     print(response)
     if response.status_code == 200:
         data = response.json()
-        return data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"]
+        size = len(data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["index"])
+        cov_matrix = np.zeros((size, size))
+
+        for i in range(size):
+            for j in range(i + 1):
+                value = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"][i][j]
+                cov_matrix[i, j] = value
+                cov_matrix[j, i] = value
+
+        return cov_matrix
     else:
         return None
 
 def calculate_optimal_weights_portfolio(portfolio_assets):
+    risk_free_rate = get_risk_free_rate()
+    expected_market_return = get_expected_market_return('SPY')
     expected_returns = []
     asset_symbols = []
-    for asset in portfolio_assets:
-        expected_return = get_expected_stock_return(asset.asset_ticker)
+    for asset_ticker in portfolio_assets:
+        expected_return = get_expected_stock_return(asset_ticker, risk_free_rate, expected_market_return)
         expected_returns.append(expected_return)
-        asset_symbols.append(asset.asset_ticker)
-    
+        asset_symbols.append(asset_ticker)
+        
     expected_returns = np.array(expected_returns)
 
     symbols = ','.join(asset_symbols)
-    cov_matrix = get_covariance_matrix(symbols) # TODO: Consider order of indexes of symbols
-    cov_matrix = np.array(cov_matrix)
-
-    risk_free_rate = get_risk_free_rate()
+    cov_matrix = get_covariance_matrix(symbols)
 
     weights = maximize_sharpe_ratio(expected_returns, cov_matrix, risk_free_rate)
 

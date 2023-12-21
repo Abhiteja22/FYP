@@ -95,9 +95,9 @@ def portfolio_list(request):
     portfolios = Portfolio.objects.filter(user=request.user)
     # Attach PortfolioAsset instances to each portfolio
     for portfolio in portfolios:
-        portfolio.assets = portfolio.assets.all()
+        portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
         combined_assets = {}
-        for asset in portfolio.assets:
+        for asset in portfolio_assets:
             if asset.asset_ticker in combined_assets:
                 combined_assets[asset.asset_ticker] += asset.quantity
             else:
@@ -137,10 +137,14 @@ def portfolio_suggest_weightage(request, portfolio_id):
     # portfolio = Portfolio.objects.get(id=portfolio_id) # ORIGINAL WAY TO GET Portfolio
     # Get the portfolio or return a 404 response if not found
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
-    portfolio_assets = portfolio.assets.all()
-    weights = calculate_optimal_weights_portfolio(portfolio_assets)
+    portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
+    asset_list = [asset.asset_ticker for asset in portfolio_assets]
+    unique_assets = list(set(asset_list))
+    unique_assets.sort()
+    weights = calculate_optimal_weights_portfolio(unique_assets)
+    zipped_asset_weights = zip(unique_assets, weights)
     context = {
         'portfolio': portfolio,
-        'weights': weights,
+        'zipped_weights': zipped_asset_weights,
     }
     return render(request, 'portfolio/portfolio_weights.html', context)

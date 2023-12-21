@@ -8,10 +8,10 @@
         <th>Asset</th>
         <th>Optimal Weight</th>
     </tr>
-    {% for asset, weight in weights.items %}
+    {% for asset, weight in zipped_weights %}
     <tr>
         <td>{{ asset }}</td>
-        <td>{{ weight|floatformat:2 }}</td>
+        <td>{{ weight|floatformat:4 }}</td>
     </tr>
     {% endfor %}
 </table>

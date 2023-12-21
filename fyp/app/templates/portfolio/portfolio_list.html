@@ -24,11 +24,11 @@
             <tr>
                 <td>{{ asset.symbol }}</td>
                 <td>{{ asset.quantity }}</td>
-                <td>{{ asset.price }}</td>
-                <td>{{ asset.std_dev }}</td>
-                <td>{{ asset.expected_return }}</td>
+                <td>{{ asset.price|floatformat:2 }}</td>
+                <td>{{ asset.std_dev|floatformat:5 }}</td>
+                <td>{{ asset.expected_return|floatformat:5 }}</td>
                 <td>{{ asset.beta }}</td>
-                <td>{{ asset.weight }}</td>
+                <td>{{ asset.weight|floatformat:5 }}</td>
                 <!-- Display other asset details -->
             </tr>
         {% empty %}
