@@ -106,6 +106,7 @@ def get_expected_stock_return(symbol, risk_free_rate, expected_market_return):
         return None
     
 def get_stock_stddev(symbol):
+    print("I am Executed")
     url = "https://alphavantageapi.co/timeseries/analytics"
     params = {
         "SYMBOLS": symbol,
@@ -119,6 +120,7 @@ def get_stock_stddev(symbol):
     response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()
+        print(data)
         std_dev = data["payload"]["RETURNS_CALCULATIONS"]["STDDEV"][symbol]
         return std_dev
     else:
@@ -186,10 +188,11 @@ def get_portfolio_stddev(asset_details):
                 cov_matrix[i, j] = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"][i][j]
                 cov_matrix[j, i] = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"][i][j]
 
-
         # Step 2: Define portfolio weights
-        weights_list = [asset.weight for asset in asset_details]
-        weights = np.array(weights_list)
+        asset_weight_dict = {asset.symbol:asset.weight for asset in asset_details}
+        asset_order = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["index"]
+        sorted_weights = [asset_weight_dict[asset] for asset in asset_order if asset in asset_weight_dict]
+        weights = np.array(sorted_weights)
 
         decimal_cov_matrix = [[Decimal(value) for value in row] for row in cov_matrix]
 
@@ -205,7 +208,7 @@ def calculate_portfolio_details(portfolioAssets):
     portfolio_details = PortfolioDetails()
     risk_free_rate = get_risk_free_rate()
     expected_market_return = get_expected_market_return('SPY')
-
+    print(portfolioAssets.items())
     for asset_ticker, quantity in portfolioAssets.items():
         # Here, you need to fetch or calculate the asset's price, std_dev, expected_return, and beta
         # For example, using a function get_asset_data(symbol) that returns these values
@@ -216,6 +219,8 @@ def calculate_portfolio_details(portfolioAssets):
         expected_return = get_expected_stock_return(asset_ticker, risk_free_rate, expected_market_return)
         beta = get_asset_beta(asset_ticker)
 
+        print(f"Details of {asset_ticker}:")
+        print(f"STDDEV: {std_dev}")
         # Calculate the total value of the asset in the portfolio
         total_asset_value = Decimal(price) * quan
         portfolio_details.total_value += total_asset_value
