@@ -5,7 +5,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from .models import PortfolioAsset, Stock, Portfolio
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .models import Asset, PortfolioAsset, Portfolio
 from .forms import AddToPortfolioForm, ProfileUpdateForm, UserRegisterForm, PortfolioForm
 from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_stock_symbols, fetch_asset_details
 
@@ -95,10 +96,22 @@ def portfolio_details(request, pk):
     return render(request, 'portfolio/portfolio_details.html', {'portfolio': portfolio})
 
 @login_required
-def asset_list(request):
-    top_assets_data = fetch_stock_symbols()
-    print(top_assets_data)
-    context = {'stocks': top_assets_data}
+def asset_list(request, country='USA'):
+    stocks = Asset.objects.filter(country=country, type="Common Stock")
+    page = request.GET.get('page', 1)
+    paginator = Paginator(stocks, 100)  # Show 100 stocks per page
+
+    try:
+        stocks = paginator.page(page)
+    except PageNotAnInteger:
+        stocks = paginator.page(1)
+    except EmptyPage:
+        stocks = paginator.page(paginator.num_pages)
+
+    context = {
+        'stocks': stocks,
+        'country': country
+    }
     return render(request, 'asset/asset_list.html', context)
 
 def asset_detail_view(request, symbol):

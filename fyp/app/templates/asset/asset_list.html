@@ -1,7 +1,13 @@
 {% extends 'base_generic.html' %}
 
 {% block content %}
+  <h2>Stock Search</h2>
+  <input type="text" id="searchBox" placeholder="Search for stocks...">
+  <div id="suggestions" style="display:none;"></div>
   <h2>Stock Symbols</h2>
+  <button onclick="location.href='{% url 'asset_list_country' 'UK' %}'">UK Stocks</button>
+  <button onclick="location.href='{% url 'asset_list_country' 'USA' %}'">USA Stocks</button>
+  
   <table>
     <thead>
       <tr>
@@ -12,13 +18,28 @@
     <tbody>
         {% for stock in stocks %}
         <tr>
-          <td><a href="{% url 'asset_detail' stock.symbol %}">{{ stock.name }}</a></td>
-          <td>{{ stock.symbol }}</td>
+          <td><a href="{% url 'asset_detail' stock.ticker %}">{{ stock.name }}</a></td>
+          <td>{{ stock.ticker }}</td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
-  <h2>Stock Search</h2>
-  <input type="text" id="searchBox" placeholder="Search for stocks...">
-  <div id="suggestions" style="display:none;"></div>
+
+  <div class="pagination">
+    <span class="step-links">
+        {% if stocks.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ stocks.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ stocks.number }} of {{ stocks.paginator.num_pages }}.
+        </span>
+
+        {% if stocks.has_next %}
+            <a href="?page={{ stocks.next_page_number }}">next</a>
+            <a href="?page={{ stocks.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+  </div>
 {% endblock %}

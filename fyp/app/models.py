@@ -33,13 +33,17 @@ class Portfolio(models.Model):
         return self.name
     
 class Asset(models.Model):
+    ticker = models.CharField(max_length=10, null=True) # TODO: Change null later
     name = models.CharField(max_length=100)
-    type = models.CharField(max_length=100)  # E.g., stocks, bonds, etc.
-    ticker = models.CharField(max_length=10, null=True)
+    country = models.CharField(max_length=100, null=True)
+    exchange = models.CharField(max_length=50, null=True)
+    currency = models.CharField(max_length=30, null=True)
+    type = models.CharField(max_length=100, null=True)  # E.g., stocks, bonds, etc.
+    isin = models.CharField(max_length=40, null=True)
     #value = models.DecimalField(max_digits=10, decimal_places=2) # Adjust this field later
     # allocation = models.DecimalField(max_digits=5, decimal_places=2)  # Percentage of the asset in the portfolio
-    alpha = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    beta = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    # alpha = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    # beta = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     # portfolio = models.ForeignKey(Portfolio, related_name='assets', on_delete=models.CASCADE, null=True)
     # historical_performance = models.JSONField(null=True, blank=True)
     # JSONField can be useful to store a variety of performance data without creating a complex relational structure

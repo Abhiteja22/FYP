@@ -9,7 +9,7 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "risk_aversion",)
 
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ("name", "alpha", "beta",)
+    list_display = ("ticker", "name", "country", "exchange", "currency", "type", "isin")
 
 class PortfolioAdmin(admin.ModelAdmin):
     list_display = ("name", "alpha", "beta",)
