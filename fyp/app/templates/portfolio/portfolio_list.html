@@ -3,46 +3,11 @@
 {% block content %}
 {% for portfolio in portfolios %}
 <p>
-  <a href="{% url 'portfolio_update' pk=portfolio.pk %}">
+  <a href="{% url 'portfolio_details' pk=portfolio.pk %}">
     {{ portfolio.name }}
   </a>
   <!-- Add other portfolio details here -->
 </p>
-<h4>Assets:</h4>
-    <table>
-        <tr>
-            <th>Asset Symbol</th>
-            <th>Quantity</th>
-            <th>Price</th>
-            <th>Standard Deviation</th>
-            <th>Expected Return</th>
-            <th>Beta</th>
-            <th>Weight</th>
-            <!-- Add other headers if necessary -->
-        </tr>
-        {% for asset in portfolio.portfolio_details.assets_details %}
-            <tr>
-                <td>{{ asset.symbol }}</td>
-                <td>{{ asset.quantity }}</td>
-                <td>{{ asset.price|floatformat:2 }}</td>
-                <td>{{ asset.std_dev|floatformat:5 }}</td>
-                <td>{{ asset.expected_return|floatformat:5 }}</td>
-                <td>{{ asset.beta }}</td>
-                <td>{{ asset.weight|floatformat:5 }}</td>
-                <!-- Display other asset details -->
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="7">No assets in this portfolio</td>
-            </tr>
-        {% endfor %}
-    </table>
-<h4>Portfolio Details:</h4>
-<p>Portfolio Total Value: {{ portfolio.portfolio_details.total_value }}</p>
-<p>Portfolio Expected Return: {{ portfolio.portfolio_details.expected_return }}</p>
-<p>Portfolio Standard Deviation: {{ portfolio.portfolio_details.standard_deviation }}</p>
-<p>Portfolio Sharpe Ratio: {{ portfolio.portfolio_details.sharpe_ratio }}</p>
-<a href="{% url 'portfolio_suggest_weightage' portfolio.id %}">Optimise Portfolio</a>
 {% empty %}
     <p>No portfolios available.</p>
 {% endfor %}

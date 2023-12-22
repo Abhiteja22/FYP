@@ -1,8 +1,10 @@
-from django.http import HttpResponse
+import requests
+from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from .models import PortfolioAsset, Stock, Portfolio
 from .forms import AddToPortfolioForm, ProfileUpdateForm, UserRegisterForm, PortfolioForm
 from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_stock_symbols, fetch_asset_details
@@ -73,21 +75,24 @@ def portfolio_update(request, pk):
 @login_required
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(user=request.user)
+    return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
+
+# To view portfolios details
+@login_required
+def portfolio_details(request, pk):
+    portfolio = Portfolio.objects.get(pk=pk, user=request.user)
     # Attach PortfolioAsset instances to each portfolio
-    for portfolio in portfolios:
-        portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
-        combined_assets = {}
-        for asset in portfolio_assets:
-            if asset.asset_ticker in combined_assets:
-                combined_assets[asset.asset_ticker] += asset.quantity
-            else:
-                combined_assets[asset.asset_ticker] = asset.quantity
+    portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
+    combined_assets = {}
+    for asset in portfolio_assets:
+        if asset.asset_ticker in combined_assets:
+            combined_assets[asset.asset_ticker] += asset.quantity
+        else:
+            combined_assets[asset.asset_ticker] = asset.quantity
 
         portfolio.portfolio_details = calculate_portfolio_details(combined_assets)
-
-    print(portfolios)
     
-    return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
+    return render(request, 'portfolio/portfolio_details.html', {'portfolio': portfolio})
 
 @login_required
 def asset_list(request):
@@ -128,3 +133,24 @@ def portfolio_suggest_weightage(request, portfolio_id):
         'zipped_weights': zipped_asset_weights,
     }
     return render(request, 'portfolio/portfolio_weights.html', context)
+
+def search_stocks(request):
+    search_text = request.GET.get('search_text', '')
+    print(search_text)
+    if search_text:
+        print("I am Executed")
+        # Call Alpha Vantage API
+        response = requests.get(
+            "https://www.alphavantage.co/query",
+            params={
+                "function": "SYMBOL_SEARCH",
+                "keywords": search_text,
+                "apikey": settings.ALPHA_VANTAGE_API_KEY,
+                "entitlement": "delayed"
+            }
+        )
+        if response.status_code == 200:
+            search_results = response.json()['bestMatches']
+            # Process and return the relevant part of the response
+            return JsonResponse(search_results, safe=False)
+    return JsonResponse([], safe=False)

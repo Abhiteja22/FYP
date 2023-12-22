@@ -1,0 +1,20 @@
+body {
+    background-color: lightblue;
+    font-family: verdana;
+}
+
+#suggestions {
+    border: 1px solid #ddd;
+    position: absolute;
+    background: #fff;
+    width: 300px;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}

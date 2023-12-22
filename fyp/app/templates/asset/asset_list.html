@@ -1,7 +1,6 @@
 {% extends 'base_generic.html' %}
 
 {% block content %}
-
   <h2>Stock Symbols</h2>
   <table>
     <thead>
@@ -19,4 +18,7 @@
       {% endfor %}
     </tbody>
   </table>
+  <h2>Stock Search</h2>
+  <input type="text" id="searchBox" placeholder="Search for stocks...">
+  <div id="suggestions" style="display:none;"></div>
 {% endblock %}
