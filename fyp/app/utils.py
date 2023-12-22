@@ -5,20 +5,10 @@ import requests
 from django.conf import settings
 from .models import PortfolioDetails
 
-def fetch_stock_symbols():
-    url = "https://cloud.iexapis.com/stable/ref-data/symbols"
-    params = {
-        "token": settings.IEX_API_KEY
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json()  # A list of dictionaries with stock info
-    else:
-        return []
-    
+# TODO: Let user decide the parameters for risk free rate based on his goals (SAVE INTO DB)
 # Modify this function to get a different rate based on factors: Time investment is going to be held, historical performance, interest rate environment
 def get_risk_free_rate():
-    url = "https://www.alphavantage.co/query"
+    url = settings.ALPHA_VANTAGE_QUERY_URL
     params = {
         "function": "TREASURY_YIELD",
         "interval": "monthly",
@@ -36,9 +26,10 @@ def get_risk_free_rate():
     else:
         return None  # Or handle the error as appropriate
 
+# TODO: Let user decide the parameters for expected market rate based on his goals (SAVE INTO DB)
 # symbol is the market index we want to track
 def get_expected_market_return(symbol):
-    url = "https://www.alphavantage.co/query"
+    url = settings.ALPHA_VANTAGE_QUERY_URL
     params = {
         "function": "TIME_SERIES_DAILY",
         "symbol": symbol,
@@ -67,11 +58,10 @@ def get_expected_market_return(symbol):
     return None
 
 def get_asset_beta(symbol):
-    url = "https://www.alphavantage.co/query"
+    url = settings.ALPHA_VANTAGE_QUERY_URL
     params = {
         "function": "OVERVIEW",
         "symbol": symbol,
-        "outputsize": "full",
         "apikey": settings.ALPHA_VANTAGE_API_KEY,
         "entitlement": "delayed"
     }
@@ -79,55 +69,13 @@ def get_asset_beta(symbol):
     if response.status_code == 200:
         data = response.json()
         if data and "Beta" in data:
-            return data["Beta"]
+            return float(data["Beta"])
     else:
         return None
     return None
 
-
-def get_expected_stock_return(symbol, risk_free_rate, expected_market_return):
-    url = "https://www.alphavantage.co/query"
-    params = {
-        "function": "OVERVIEW",
-        "symbol": symbol,
-        "outputsize": "full",
-        "apikey": settings.ALPHA_VANTAGE_API_KEY,
-        "entitlement": "delayed"
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200 and risk_free_rate and expected_market_return:
-        data = response.json()
-        beta = data["Beta"]
-        risk_premium = expected_market_return - risk_free_rate
-        stock_risk_premium = float(beta) * risk_premium
-        expected_return = risk_free_rate + stock_risk_premium
-        return expected_return
-    else:
-        return None
-    
-def get_stock_stddev(symbol):
-    print("I am Executed")
-    url = "https://alphavantageapi.co/timeseries/analytics"
-    params = {
-        "SYMBOLS": symbol,
-        "RANGE": "2023-07-01",
-        "RANGE": "2023-08-31",
-        "INTERVAL": "DAILY",
-        "CALCULATIONS": "STDDEV",
-        "apikey": settings.ALPHA_VANTAGE_API_KEY,
-        "entitlement": "delayed"
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        data = response.json()
-        print(data)
-        std_dev = data["payload"]["RETURNS_CALCULATIONS"]["STDDEV"][symbol]
-        return std_dev
-    else:
-        return None
-    
 def get_asset_price(symbol):
-    url = "https://www.alphavantage.co/query"
+    url = settings.ALPHA_VANTAGE_QUERY_URL
     params = {
         "function": "GLOBAL_QUOTE",
         "symbol": symbol,
@@ -142,22 +90,52 @@ def get_asset_price(symbol):
     else:
         return None
     return None
+
+def calculate_expected_stock_return(beta, risk_free_rate, expected_market_return):
+    risk_premium = expected_market_return - risk_free_rate
+    stock_risk_premium = beta * risk_premium
+    expected_return = risk_free_rate + stock_risk_premium
+    
+    return expected_return
+    
+def get_stock_stddev(symbol):
+    url = settings.ALPHA_VANTAGE_ANALYTICS_URL
+    params = {
+        "SYMBOLS": symbol,
+        "RANGE": "2020-01-01", # TODO: Handle error where stock is newer than this date
+        "INTERVAL": "DAILY", # TODO: DAILY data can be noisy, decide later based on investor's goals
+        "CALCULATIONS": "STDDEV",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        print(data)
+        std_dev = data["payload"]["RETURNS_CALCULATIONS"]["STDDEV"][symbol]
+        return std_dev
+    else:
+        return None
     
 def fetch_asset_details(symbol):
-    # Construct the URL for detailed stock info
-    # This example assumes you're using IEX Cloud's API; adjust as needed for your actual data source
-    #url = f"https://cloud.iexapis.com/stable/stock/{symbol}/quote?token={settings.IEX_API_KEY}"
-    url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={settings.ALPHA_VANTAGE_API_KEY}&entitlement=delayed"
-    response = requests.get(url)
+    url = settings.ALPHA_VANTAGE_QUERY_URL
+    params = {
+        "function": "OVERVIEW",
+        "symbol": symbol,
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()
         risk_free_rate = get_risk_free_rate()
         expected_market_return = get_expected_market_return('SPY')
         stock_price = float(get_asset_price(symbol))
         std_dev = get_stock_stddev(symbol)
+        beta = get_asset_beta(symbol)
         data['Risk_free_rate'] = f"{risk_free_rate:.3%}"
         data['Expected_market_return'] = f"{expected_market_return:.3%}"
-        data['Expected_return'] = f"{get_expected_stock_return(symbol, risk_free_rate, expected_market_return):.3%}"
+        data['Expected_return'] = f"{calculate_expected_stock_return(beta, risk_free_rate, expected_market_return):.3%}"
         data['Asset_price'] = f"USD ${stock_price:.2f}"
         data['Std_dev'] = std_dev
 
@@ -168,7 +146,7 @@ def fetch_asset_details(symbol):
 def get_portfolio_stddev(asset_details):
     asset_symbols = [asset.symbol for asset in asset_details]
     symbols = ','.join(asset_symbols)
-    url = "https://alphavantageapi.co/timeseries/analytics"
+    url = settings.ALPHA_VANTAGE_ANALYTICS_URL
     params = {
         "SYMBOLS": symbols,
         "RANGE": "2023-07-01", # Update range
@@ -216,9 +194,9 @@ def calculate_portfolio_details(portfolioAssets):
 
         price = get_asset_price(asset_ticker)
         std_dev = get_stock_stddev(asset_ticker)
-        expected_return = get_expected_stock_return(asset_ticker, risk_free_rate, expected_market_return)
         beta = get_asset_beta(asset_ticker)
-
+        expected_return = calculate_expected_stock_return(beta, risk_free_rate, expected_market_return)
+        
         print(f"Details of {asset_ticker}:")
         print(f"STDDEV: {std_dev}")
         # Calculate the total value of the asset in the portfolio
@@ -273,7 +251,7 @@ def maximize_sharpe_ratio(expected_returns, cov_matrix, risk_free_rate):
     return result.x
 
 def get_covariance_matrix(symbols):
-    url = "https://alphavantageapi.co/timeseries/analytics"
+    url = settings.ALPHA_VANTAGE_ANALYTICS_URL
     params = {
         "SYMBOLS": symbols,
         "RANGE": "2023-07-01", # Update range

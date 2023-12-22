@@ -9,13 +9,10 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
-# import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -38,6 +35,8 @@ LOGOUT_REDIRECT_URL = 'login'
 
 IEX_API_KEY = "sk_a82134349a734183a61d4c595cff3ccc"
 ALPHA_VANTAGE_API_KEY = "FUPT81G3YM7VYKAX"     # Free API Key: "APFOC2NTCXD3NUKK"
+ALPHA_VANTAGE_QUERY_URL = "https://www.alphavantage.co/query"
+ALPHA_VANTAGE_ANALYTICS_URL = "https://alphavantageapi.co/timeseries/analytics"
 
 # Application definition
 
@@ -129,13 +128,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-
-# # Add these new lines
-# STATICFILES_DIRS = (
-#     os.path.join(BASE_DIR, 'static'),
-# )
-
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

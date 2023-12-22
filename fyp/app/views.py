@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Asset, PortfolioAsset, Portfolio
 from .forms import AddToPortfolioForm, ProfileUpdateForm, UserRegisterForm, PortfolioForm
-from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_stock_symbols, fetch_asset_details
+from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_asset_details
 
 # Create your views here.
 
