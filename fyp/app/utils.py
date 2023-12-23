@@ -86,7 +86,6 @@ def get_asset_price(symbol):
     params = {
         "function": "GLOBAL_QUOTE",
         "symbol": symbol,
-        "outputsize": "full",
         "apikey": settings.ALPHA_VANTAGE_API_KEY
     }
     response = requests.get(url, params=params)
@@ -109,7 +108,7 @@ def get_stock_stddev(symbol):
     url = settings.ALPHA_VANTAGE_ANALYTICS_URL
     params = {
         "SYMBOLS": symbol,
-        "RANGE": "2020-01-01", # TODO: Handle error where stock is newer than this date
+        "RANGE": "full",
         "INTERVAL": "DAILY", # TODO: DAILY data can be noisy, decide later based on investor's goals
         "CALCULATIONS": "STDDEV",
         "apikey": settings.ALPHA_VANTAGE_API_KEY,
@@ -156,8 +155,7 @@ def get_portfolio_stddev(asset_details):
     url = settings.ALPHA_VANTAGE_ANALYTICS_URL
     params = {
         "SYMBOLS": symbols,
-        "RANGE": "2023-07-01", # Update range
-        "RANGE": "2023-08-31",
+        "RANGE": "full",
         "INTERVAL": "DAILY",
         "CALCULATIONS": "COVARIANCE",
         "apikey": settings.ALPHA_VANTAGE_API_KEY,
@@ -261,8 +259,7 @@ def get_covariance_matrix(symbols):
     url = settings.ALPHA_VANTAGE_ANALYTICS_URL
     params = {
         "SYMBOLS": symbols,
-        "RANGE": "2023-07-01", # Update range
-        "RANGE": "2023-08-31",
+        "RANGE": "full",
         "INTERVAL": "DAILY",
         "CALCULATIONS": "COVARIANCE",
         "apikey": settings.ALPHA_VANTAGE_API_KEY,
@@ -291,7 +288,7 @@ def calculate_optimal_weights_portfolio(portfolio_assets):
     expected_returns = []
     asset_symbols = []
     for asset_ticker in portfolio_assets:
-        expected_return = get_expected_stock_return(asset_ticker, risk_free_rate, expected_market_return)
+        expected_return = calculate_expected_stock_return(beta, risk_free_rate, expected_market_return)
         expected_returns.append(expected_return)
         asset_symbols.append(asset_ticker)
         
