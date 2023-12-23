@@ -6,9 +6,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Asset, PortfolioAsset, Portfolio
-from .forms import AddToPortfolioForm, ProfileUpdateForm, UserRegisterForm, PortfolioForm
-from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_asset_details
+from .models import Asset, PortfolioAsset, Portfolio, Profile
+from .forms import AddToPortfolioForm, UserRegisterForm, ProfileForm, PortfolioForm
+from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_asset_details, get_expected_market_return, get_risk_free_rate
 
 # Create your views here.
 
@@ -19,15 +19,26 @@ def main(request):
 
 def register(request):
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            messages.success(request, f'Account created for {username}! You can now log in.')
+        user_form = UserRegisterForm(request.POST)
+        profile_form = ProfileForm(request.POST)
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save()
+            # Obtain the existing Profile instance or create a new one if it doesn't exist
+            profile, created = Profile.objects.get_or_create(user=user)
+
+            # Update the profile with form data
+            profile_form = ProfileForm(request.POST, instance=profile)
+            profile = profile_form.save(commit=False)
+            
+            profile.risk_free_rate = get_risk_free_rate(profile.investment_time_period)
+            profile.expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
+
+            profile.save()
             return redirect('login')
     else:
-        form = UserRegisterForm()
-    return render(request, 'registration/register.html', {'form': form})
+        user_form = UserRegisterForm()
+        profile_form = ProfileForm()
+    return render(request, 'registration/register.html', {'user_form': user_form, 'profile_form': profile_form})
 
 @login_required
 def profile_view(request):
@@ -37,14 +48,16 @@ def profile_view(request):
 @login_required
 def profile_update(request):
     if request.method == 'POST':
-        form = ProfileUpdateForm(request.POST, instance=request.user.profile)
-        if form.is_valid():
-            form.save()
-            # Redirect to profile view or add a success message
+        profile_form = ProfileForm(request.POST, instance=request.user.profile)
+        if profile_form.is_valid():
+            profile = profile_form.save(commit=False)
+            profile.risk_free_rate = get_risk_free_rate(profile.investment_time_period)
+            profile.expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
+            profile.save()
             return redirect('profile_view')
     else:
-        form = ProfileUpdateForm(instance=request.user.profile)
-    return render(request, 'profile/profile_update.html', {'form': form})
+        profile_form = ProfileForm(instance=request.user.profile)
+    return render(request, 'profile/profile_update.html', {'form': profile_form})
 
 @login_required
 def portfolio_create(request):

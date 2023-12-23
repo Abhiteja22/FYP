@@ -5,14 +5,13 @@ import requests
 from django.conf import settings
 from .models import PortfolioDetails
 
-# TODO: Let user decide the parameters for risk free rate based on his goals (SAVE INTO DB)
 # Modify this function to get a different rate based on factors: Time investment is going to be held, historical performance, interest rate environment
-def get_risk_free_rate():
+def get_risk_free_rate(time_period):
     url = settings.ALPHA_VANTAGE_QUERY_URL
     params = {
         "function": "TREASURY_YIELD",
         "interval": "monthly",
-        "maturity": "10year",
+        "maturity": time_period,
         "apikey": settings.ALPHA_VANTAGE_API_KEY,
         "entitlement": "delayed"
     }
@@ -26,12 +25,23 @@ def get_risk_free_rate():
     else:
         return None  # Or handle the error as appropriate
 
-# TODO: Let user decide the parameters for expected market rate based on his goals (SAVE INTO DB)
-# symbol is the market index we want to track
-def get_expected_market_return(symbol):
+# Get Expected Market Return (symbol: market index to track)
+def get_expected_market_return(symbol, investment_time_period):
+    if investment_time_period == '3month':
+        func = "TIME_SERIES_DAILY_ADJUSTED"
+        data_feature = 'Time Series (Daily)'
+        annualising_factor = 252
+    elif investment_time_period == '2year':
+        func = "TIME_SERIES_WEEKLY_ADJUSTED"
+        data_feature = 'Weekly Adjusted Time Series'
+        annualising_factor = 52
+    else:
+        func = "TIME_SERIES_MONTHLY_ADJUSTED"
+        data_feature = 'Monthly Adjusted Time Series'
+        annualising_factor = 12
     url = settings.ALPHA_VANTAGE_QUERY_URL
     params = {
-        "function": "TIME_SERIES_DAILY",
+        "function": func,
         "symbol": symbol,
         "outputsize": "full",
         "apikey": settings.ALPHA_VANTAGE_API_KEY,
@@ -40,18 +50,15 @@ def get_expected_market_return(symbol):
     response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()
-        if data and 'Time Series (Daily)' in data:
+        if data and data_feature in data:
             # Extract closing prices
-            closing_prices = [float(day_data['4. close']) for date, day_data in data['Time Series (Daily)'].items()]
-
+            adjusted_closing_prices = [float(day_data['5. adjusted close']) for date, day_data in data[data_feature].items()]
             # Calculate daily returns
-            daily_returns = [(closing_prices[i] / closing_prices[i + 1] - 1) for i in range(len(closing_prices) - 1)]
-
+            returns = [(adjusted_closing_prices[i] / adjusted_closing_prices[i + 1] - 1) for i in range(len(adjusted_closing_prices) - 1)]
             # Compute the average annual return
             # Assuming 252 trading days in a year
-            average_daily_return = sum(daily_returns) / len(daily_returns)
-            average_annual_return = (1 + average_daily_return) ** 252 - 1
-
+            average_return = sum(returns) / len(returns)
+            average_annual_return = (1 + average_return) ** annualising_factor - 1
             return average_annual_return
     else:
         return None

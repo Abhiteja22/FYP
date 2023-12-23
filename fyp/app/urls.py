@@ -11,6 +11,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile_view'),
     path('profile/update/', views.profile_update, name='profile_update'),
     path('portfolio/<int:portfolio_id>/suggest_weightage/', views.portfolio_suggest_weightage, name='portfolio_suggest_weightage'),
+    path('stocks/', views.asset_list, name='asset_list'),  # Default to USA
     path('stocks/<str:country>/', views.asset_list, name='asset_list_country'),
     path('assets/<str:symbol>/', views.asset_detail_view, name='asset_detail'),
     path('search_stocks/', views.search_stocks, name='search_stocks'),
