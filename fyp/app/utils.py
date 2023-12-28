@@ -3,7 +3,15 @@ import numpy as np
 from scipy.optimize import minimize
 import requests
 from django.conf import settings
-from .models import PortfolioDetails
+
+def calculate_expected_asset_return(beta, risk_free_rate, expected_market_return):
+    if beta is None or risk_free_rate is None or expected_market_return is None:
+        return None
+    risk_premium = expected_market_return - risk_free_rate
+    asset_risk_premium = beta * risk_premium
+    expected_return = risk_free_rate + asset_risk_premium
+    
+    return expected_return
 
 # Modify this function to get a different rate based on factors: Time investment is going to be held, historical performance, interest rate environment
 def get_risk_free_rate(time_period):
@@ -21,7 +29,7 @@ def get_risk_free_rate(time_period):
         # The latest yield is the risk-free rate
         # Assuming the JSON structure has the dates as keys
         latest_rate = data['data'][0]['value']
-        return float(latest_rate) / 100  # Convert percentage to decimal
+        return Decimal(latest_rate) / 100  # Convert percentage to decimal
     else:
         return None  # Or handle the error as appropriate
 
@@ -52,7 +60,7 @@ def get_expected_market_return(symbol, investment_time_period):
         data = response.json()
         if data and data_feature in data:
             # Extract closing prices
-            adjusted_closing_prices = [float(day_data['5. adjusted close']) for date, day_data in data[data_feature].items()]
+            adjusted_closing_prices = [Decimal(day_data['5. adjusted close']) for date, day_data in data[data_feature].items()]
             # Calculate daily returns
             returns = [(adjusted_closing_prices[i] / adjusted_closing_prices[i + 1] - 1) for i in range(len(adjusted_closing_prices) - 1)]
             # Compute the average annual return
@@ -76,7 +84,24 @@ def get_asset_beta(symbol):
     if response.status_code == 200:
         data = response.json()
         if data and "Beta" in data:
-            return float(data["Beta"])
+            return Decimal(data["Beta"])
+    else:
+        return None
+    return None
+
+def get_asset_name(symbol):
+    url = settings.ALPHA_VANTAGE_QUERY_URL
+    params = {
+        "function": "OVERVIEW",
+        "symbol": symbol,
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if data and "Name" in data:
+            return data["Name"]
     else:
         return None
     return None
@@ -92,19 +117,12 @@ def get_asset_price(symbol):
     if response.status_code == 200:
         data = response.json()
         if data and "Global Quote" in data:
-            return data["Global Quote"]['05. price']
+            return Decimal(data["Global Quote"]['05. price'])
     else:
         return None
     return None
-
-def calculate_expected_stock_return(beta, risk_free_rate, expected_market_return):
-    risk_premium = expected_market_return - risk_free_rate
-    stock_risk_premium = beta * risk_premium
-    expected_return = risk_free_rate + stock_risk_premium
     
-    return expected_return
-    
-def get_stock_stddev(symbol):
+def get_asset_stddev(symbol):
     url = settings.ALPHA_VANTAGE_ANALYTICS_URL
     params = {
         "SYMBOLS": symbol,
@@ -117,40 +135,26 @@ def get_stock_stddev(symbol):
     response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()
-        print(data)
         std_dev = data["payload"]["RETURNS_CALCULATIONS"]["STDDEV"][symbol]
-        return std_dev
+        return Decimal(std_dev)
     else:
         return None
-    
-def fetch_asset_details(symbol):
-    url = settings.ALPHA_VANTAGE_QUERY_URL
-    params = {
-        "function": "OVERVIEW",
-        "symbol": symbol,
-        "apikey": settings.ALPHA_VANTAGE_API_KEY,
-        "entitlement": "delayed"
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        data = response.json()
-        risk_free_rate = get_risk_free_rate()
-        expected_market_return = get_expected_market_return('SPY')
-        stock_price = float(get_asset_price(symbol))
-        std_dev = get_stock_stddev(symbol)
-        beta = get_asset_beta(symbol)
-        data['Risk_free_rate'] = f"{risk_free_rate:.3%}"
-        data['Expected_market_return'] = f"{expected_market_return:.3%}"
-        data['Expected_return'] = f"{calculate_expected_stock_return(beta, risk_free_rate, expected_market_return):.3%}"
-        data['Asset_price'] = f"USD ${stock_price:.2f}"
-        data['Std_dev'] = std_dev
 
-        return data # JSON with detailed stock info
-    else:
-        return None
+def get_asset_details(symbol, profile):
+    risk_free_rate = get_risk_free_rate(profile.investment_time_period)
+    expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
+    data = {}
+    data['Price'] = get_asset_price(symbol)
+    data['Beta'] = get_asset_beta(symbol)
+    data['Stddev'] = get_asset_stddev(symbol)
+    data['Name'] = get_asset_name(symbol)
+    data['Expected_return'] = calculate_expected_asset_return(data["Beta"], risk_free_rate, expected_market_return)
+    data['Sharpe_ratio'] = (data['Expected_return'] - risk_free_rate) / data['Stddev']
+
+    return data
     
 def get_portfolio_stddev(asset_details):
-    asset_symbols = [asset.symbol for asset in asset_details]
+    asset_symbols = [asset for asset in asset_details]
     symbols = ','.join(asset_symbols)
     url = settings.ALPHA_VANTAGE_ANALYTICS_URL
     params = {
@@ -172,7 +176,7 @@ def get_portfolio_stddev(asset_details):
                 cov_matrix[j, i] = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"][i][j]
 
         # Step 2: Define portfolio weights
-        asset_weight_dict = {asset.symbol:asset.weight for asset in asset_details}
+        asset_weight_dict = {asset:dict["Weight"] for asset,dict in asset_details.items()}
         asset_order = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["index"]
         sorted_weights = [asset_weight_dict[asset] for asset in asset_order if asset in asset_weight_dict]
         weights = np.array(sorted_weights)
@@ -181,57 +185,47 @@ def get_portfolio_stddev(asset_details):
 
         # Step 3: Calculate portfolio variance
         portfolio_variance = np.dot(weights, np.dot(decimal_cov_matrix, weights.T))
-        portfolio_stddev = float(portfolio_variance) ** 0.5
+        portfolio_stddev = portfolio_variance ** Decimal(0.5)
 
         return portfolio_stddev
     else:
         return None
     
-def calculate_portfolio_details(portfolioAssets):
-    portfolio_details = PortfolioDetails()
-    risk_free_rate = get_risk_free_rate()
-    expected_market_return = get_expected_market_return('SPY')
-    print(portfolioAssets.items())
-    for asset_ticker, quantity in portfolioAssets.items():
-        # Here, you need to fetch or calculate the asset's price, std_dev, expected_return, and beta
-        # For example, using a function get_asset_data(symbol) that returns these values
-        quan = quantity
-
-        price = get_asset_price(asset_ticker)
-        std_dev = get_stock_stddev(asset_ticker)
-        beta = get_asset_beta(asset_ticker)
-        expected_return = calculate_expected_stock_return(beta, risk_free_rate, expected_market_return)
-        
-        print(f"Details of {asset_ticker}:")
-        print(f"STDDEV: {std_dev}")
+def calculate_portfolio_details(portfolioAssets, profile):
+    risk_free_rate = get_risk_free_rate(profile.investment_time_period)
+    portfolio_details = {}
+    portfolio_details["Portfolio"] = {}
+    portfolio_details["Portfolio"]["Asset_value"] = 0
+    portfolio_details["Portfolio"]["Expected_return"] = 0
+    for asset, quantity in portfolioAssets.items():
+        portfolio_details[asset] = get_asset_details(asset, profile)
+        portfolio_details[asset]["Quantity"] = quantity
         # Calculate the total value of the asset in the portfolio
-        total_asset_value = Decimal(price) * quan
-        portfolio_details.total_value += total_asset_value
-
-        # Append the asset details to the portfolio
-        asset_details = PortfolioDetails.AssetDetails(
-            asset_ticker, quan, price, std_dev, expected_return, beta, 0  # Weight to be calculated later
-        )
-        portfolio_details.assets_details.append(asset_details)
+        portfolio_details[asset]["Asset_value"] = portfolio_details[asset]["Price"] * quantity
+        portfolio_details["Portfolio"]["Asset_value"] += portfolio_details[asset]["Asset_value"]
 
     # Calculate weight, expected portfolio return, and standard deviation
-    for asset_detail in portfolio_details.assets_details:
-        # Calculate weight of each asset
-        asset_detail.weight = (Decimal(asset_detail.price) * asset_detail.quantity) / portfolio_details.total_value
+    for asset in portfolio_details:
+        if asset != "Portfolio":
+            # Calculate weight of each asset
+            portfolio_details[asset]["Weight"] = portfolio_details[asset]["Price"] * portfolio_details[asset]["Quantity"] / portfolio_details["Portfolio"]["Asset_value"]
 
-        # Add to expected portfolio return
-        portfolio_details.expected_return += Decimal(asset_detail.expected_return) * asset_detail.weight
+            # Add to expected portfolio return
+            portfolio_details["Portfolio"]["Expected_return"] += portfolio_details[asset]["Expected_return"] * portfolio_details[asset]["Weight"]
+        else:
+            portfolio_details[asset]["Weight"] = 1
     
-    portfolio_details.standard_deviation = get_portfolio_stddev(portfolio_details.assets_details)
+    portfolio_assets = {k : v for k, v in portfolio_details.items() if k != "Portfolio"}
+    portfolio_details["Portfolio"]["Stddev"] = get_portfolio_stddev(portfolio_assets)
 
-    if portfolio_details.standard_deviation is not None:
-        portfolio_details.sharpe_ratio = (portfolio_details.expected_return - Decimal(risk_free_rate))/Decimal(portfolio_details.standard_deviation)
-        portfolio_details.standard_deviation = f"{float(portfolio_details.standard_deviation):.3%}"
-        portfolio_details.sharpe_ratio = f"{float(portfolio_details.sharpe_ratio):.5f}"
+    if portfolio_details["Portfolio"]["Stddev"] is not None:
+        portfolio_details["Portfolio"]["Sharpe_ratio"] = (portfolio_details["Portfolio"]["Expected_return"] - risk_free_rate) / portfolio_details["Portfolio"]["Stddev"]
+        # portfolio_details.standard_deviation = f"{float(portfolio_details.standard_deviation):.3%}"
+        # portfolio_details.sharpe_ratio = f"{float(portfolio_details.sharpe_ratio):.5f}"
     else:
         portfolio_details.sharpe_ratio = "NA"
-    portfolio_details.total_value = f"USD ${portfolio_details.total_value:.2f}"
-    portfolio_details.expected_return = f"{portfolio_details.expected_return:.3%}"
+    # portfolio_details.total_value = f"USD ${portfolio_details.total_value:.2f}"
+    # portfolio_details.expected_return = f"{portfolio_details.expected_return:.3%}"
 
     return portfolio_details
 

@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Asset, PortfolioAsset, Portfolio, Profile
 from .forms import AddToPortfolioForm, UserRegisterForm, ProfileForm, PortfolioForm
-from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, fetch_asset_details, get_expected_market_return, get_risk_free_rate
+from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_asset_details, get_expected_market_return, get_risk_free_rate
 
 # Create your views here.
 
@@ -59,6 +59,7 @@ def profile_update(request):
         profile_form = ProfileForm(instance=request.user.profile)
     return render(request, 'profile/profile_update.html', {'form': profile_form})
 
+# TODO: Update portfolio creation page
 @login_required
 def portfolio_create(request):
     if request.method == 'POST':
@@ -72,7 +73,7 @@ def portfolio_create(request):
         form = PortfolioForm()
     return render(request, 'portfolio/portfolio_form.html', {'form': form})
 
-# TODO
+# TODO: Update portfolio update page
 @login_required 
 def portfolio_update(request, pk):
     portfolio = Portfolio.objects.get(pk=pk, user=request.user)
@@ -85,7 +86,7 @@ def portfolio_update(request, pk):
         form = PortfolioForm(instance=portfolio)
     return render(request, 'portfolio/portfolio_form.html', {'form': form, 'portfolio': portfolio})
 
-# To view portfolios
+# To view list of portfolios
 @login_required
 def portfolio_list(request):
     portfolios = Portfolio.objects.filter(user=request.user)
@@ -94,6 +95,7 @@ def portfolio_list(request):
 # To view portfolios details
 @login_required
 def portfolio_details(request, pk):
+    profile = request.user.profile
     portfolio = Portfolio.objects.get(pk=pk, user=request.user)
     # Attach PortfolioAsset instances to each portfolio
     portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
@@ -104,13 +106,13 @@ def portfolio_details(request, pk):
         else:
             combined_assets[asset.asset_ticker] = asset.quantity
 
-        portfolio.portfolio_details = calculate_portfolio_details(combined_assets)
+    portfolio.portfolio_details = calculate_portfolio_details(combined_assets, profile)
     
     return render(request, 'portfolio/portfolio_details.html', {'portfolio': portfolio})
 
 @login_required
 def asset_list(request, country='USA'):
-    stocks = Asset.objects.filter(country=country, type="Common Stock")
+    stocks = Asset.objects.filter(country=country, type="Stock")
     page = request.GET.get('page', 1)
     paginator = Paginator(stocks, 100)  # Show 100 stocks per page
 
@@ -128,7 +130,8 @@ def asset_list(request, country='USA'):
     return render(request, 'asset/asset_list.html', context)
 
 def asset_detail_view(request, symbol):
-    asset_details = fetch_asset_details(symbol)  # Fetch detailed info like price, volume, etc.
+    profile = request.user.profile
+    asset_details = get_asset_details(symbol, profile)  # Fetch detailed info like price, volume, etc.
     if request.method == "POST":
         form = AddToPortfolioForm(request.POST)
         if form.is_valid():
