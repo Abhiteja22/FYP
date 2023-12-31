@@ -43,6 +43,9 @@ def register(request):
 @login_required
 def profile_view(request):
     profile = request.user.profile
+    profile.risk_free_rate = get_risk_free_rate(profile.investment_time_period)
+    profile.expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
+    profile.save()
     return render(request, 'profile/profile_view.html', {'profile': profile})
 
 @login_required
@@ -59,7 +62,7 @@ def profile_update(request):
         profile_form = ProfileForm(instance=request.user.profile)
     return render(request, 'profile/profile_update.html', {'form': profile_form})
 
-# TODO: Update portfolio creation page
+# TODO: Update portfolio creation page to be able to add assets from the page
 @login_required
 def portfolio_create(request):
     if request.method == 'POST':
@@ -148,6 +151,7 @@ def asset_detail_view(request, symbol):
     # asset = Asset.objects.get(symbol=symbol)
 
 def portfolio_suggest_weightage(request, portfolio_id):
+    profile = request.user.profile
     # portfolio = Portfolio.objects.get(id=portfolio_id) # ORIGINAL WAY TO GET Portfolio
     # Get the portfolio or return a 404 response if not found
     portfolio = get_object_or_404(Portfolio, id=portfolio_id)
@@ -155,8 +159,7 @@ def portfolio_suggest_weightage(request, portfolio_id):
     asset_list = [asset.asset_ticker for asset in portfolio_assets]
     unique_assets = list(set(asset_list))
     unique_assets.sort()
-    weights = calculate_optimal_weights_portfolio(unique_assets)
-    zipped_asset_weights = zip(unique_assets, weights)
+    zipped_asset_weights = calculate_optimal_weights_portfolio(profile, unique_assets)
     context = {
         'portfolio': portfolio,
         'zipped_weights': zipped_asset_weights,
@@ -167,7 +170,6 @@ def search_stocks(request):
     search_text = request.GET.get('search_text', '')
     print(search_text)
     if search_text:
-        print("I am Executed")
         # Call Alpha Vantage API
         response = requests.get(
             "https://www.alphavantage.co/query",

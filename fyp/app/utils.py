@@ -153,6 +153,7 @@ def get_asset_details(symbol, profile):
 
     return data
     
+# Adjust function to use get_covariance_matrix to avoid repetition
 def get_portfolio_stddev(asset_details):
     asset_symbols = [asset for asset in asset_details]
     symbols = ','.join(asset_symbols)
@@ -239,14 +240,14 @@ def maximize_sharpe_ratio(expected_returns, cov_matrix, risk_free_rate):
     args = (expected_returns, cov_matrix, risk_free_rate)
     
     constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})  # The sum of weights is 1
-    bound = (0, 1)
-    bounds = tuple(bound for asset in range(num_assets))
+    # bound = (0, 1)
+    # bounds = tuple(bound for asset in range(num_assets)) # No short shelling
+    initial_weights = [1.0 / num_assets] * num_assets
     
     result = minimize(lambda weights: -sharpe_ratio(weights, *args), 
-                      np.array(num_assets * [1. / num_assets]), 
-                      method='SLSQP', bounds=bounds, constraints=constraints)
+                      initial_weights, 
+                      method='SLSQP', constraints=constraints)
 
-    print(result)
     return result.x
 
 def get_covariance_matrix(symbols):
@@ -260,7 +261,6 @@ def get_covariance_matrix(symbols):
         "entitlement": "delayed"
     }
     response = requests.get(url, params)
-    print(response)
     if response.status_code == 200:
         data = response.json()
         size = len(data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["index"])
@@ -271,26 +271,35 @@ def get_covariance_matrix(symbols):
                 value = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["covariance"][i][j]
                 cov_matrix[i, j] = value
                 cov_matrix[j, i] = value
+        
+        asset_order = data['payload']['RETURNS_CALCULATIONS']['COVARIANCE']["index"]
 
-        return cov_matrix
+        return cov_matrix, asset_order
     else:
         return None
 
-def calculate_optimal_weights_portfolio(portfolio_assets):
-    risk_free_rate = get_risk_free_rate()
-    expected_market_return = get_expected_market_return('SPY')
+def calculate_optimal_weights_portfolio(profile, portfolio_assets):
+    risk_free_rate = get_risk_free_rate(profile.investment_time_period)
+    expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
     expected_returns = []
     asset_symbols = []
     for asset_ticker in portfolio_assets:
-        expected_return = calculate_expected_stock_return(beta, risk_free_rate, expected_market_return)
+        beta = get_asset_beta(asset_ticker)
+        expected_return = calculate_expected_asset_return(beta, risk_free_rate, expected_market_return)
         expected_returns.append(expected_return)
         asset_symbols.append(asset_ticker)
-        
-    expected_returns = np.array(expected_returns)
-
+    
     symbols = ','.join(asset_symbols)
-    cov_matrix = get_covariance_matrix(symbols)
+    cov_matrix, asset_order = get_covariance_matrix(symbols)
 
-    weights = maximize_sharpe_ratio(expected_returns, cov_matrix, risk_free_rate)
+    # Sorting logic
+    sorted_indices = [asset_symbols.index(asset) for asset in asset_order]
+    sorted_expected_returns = [float(expected_returns[i]) for i in sorted_indices]
+    risk_free_rate = float(risk_free_rate)
+    sorted_asset_symbols = [asset_symbols[i] for i in sorted_indices]   
+    sorted_expected_returns = np.array(sorted_expected_returns)
+    cov_matrix = np.array(cov_matrix)
+    
+    weights = maximize_sharpe_ratio(sorted_expected_returns, cov_matrix, risk_free_rate)
 
-    return weights
+    return zip(sorted_asset_symbols, weights)
