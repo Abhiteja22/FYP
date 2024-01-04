@@ -5,9 +5,11 @@ from scipy.optimize import minimize
 import requests
 from django.conf import settings
 import plotly.graph_objects as go
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from datetime import datetime, timedelta
+from statsmodels.tsa.arima.model import ARIMA
+from datetime import timedelta
+import matplotlib.pyplot as plt
+from statsmodels.tsa.stattools import acf, pacf
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 def calculate_expected_asset_return(beta, risk_free_rate, expected_market_return):
     if beta is None or risk_free_rate is None or expected_market_return is None:
@@ -356,32 +358,25 @@ def get_linear_regression(symbol):
         df['date'] = pd.to_datetime(df.index)
         df['adj_close'] = df['5. adjusted close'].astype(float)
 
-        # Convert date to ordinal
-        df['date_ordinal'] = pd.to_datetime(df['date']).map(datetime.toordinal)
+        df.sort_index(inplace=True)
+        df = df[~df.index.duplicated()]
+        df.index = pd.DatetimeIndex(df.index).to_period('D')
 
-        # Prepare the features (X) and target (y)
-        X = df[['date_ordinal']]
-        y = df['adj_close']
-        print(X.head())
-        print(y.head())
+        # ARIMA Model
+        # Note: You might need to adjust the order (p, d, q) based on your data's characteristics
+        model = ARIMA(df['adj_close'], order=(1, 1, 1)) 
+        fitted_model = model.fit()
 
-        # Create and train the model
-        model = LinearRegression()
-        model.fit(X, y)
+        # Forecast for the Next Three Months
+        # ARIMA's 'forecast' function automatically handles the date index
+        predicted_prices = fitted_model.forecast(steps=90)  # 90 days ~ roughly 3 months
 
-        # Predict for the Next Three Months
-        last_date = df['date'].max()
-        future_dates = [last_date + timedelta(days=i) for i in range(1, 91)]  # 90 days ~ roughly 3 months
-        future_dates_ordinal = [date.toordinal() for date in future_dates]
-        future_dates_df = pd.DataFrame(future_dates_ordinal, columns=['date_ordinal'])
-        print(future_dates_df.head())
-
-        # Predict future prices
-        predicted_prices = model.predict(future_dates_df)
-
-        predictions = pd.DataFrame({'Date': future_dates, 'Predicted Price': predicted_prices})
+        # Creating a DataFrame for the predictions
+        last_date = df.index[-1].to_timestamp()
+        future_dates = [last_date + timedelta(days=i) for i in range(1, 91)]
+        predictions = pd.DataFrame({'Date': future_dates, 'Predicted Price': predicted_prices.values})
         print(predictions.head())
         
-        return predictions
+        return [predictions, acf_plot, pacf_plot]
     else:
         return None

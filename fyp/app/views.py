@@ -188,5 +188,8 @@ def search_stocks(request):
 def show_chart(request, symbol):
     chart = get_simple_moving_average(symbol)
     predicted_prices = get_linear_regression(symbol)
-    context = {'chart': chart}
+    predicted_prices = predicted_prices[0]
+    acf_plot = predicted_prices[1]
+    pacf_plot = predicted_prices[2]
+    context = {'chart': chart, 'acf': acf_plot, 'pacf': pacf_plot}
     return render(request, 'asset/asset_dashboard.html', context)
