@@ -28,9 +28,7 @@ ALLOWED_HOSTS = []
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
 LOGIN_URL = 'login'
-
 LOGIN_REDIRECT_URL = 'main'
-
 LOGOUT_REDIRECT_URL = 'login'
 
 IEX_API_KEY = "sk_a82134349a734183a61d4c595cff3ccc"
@@ -39,7 +37,6 @@ ALPHA_VANTAGE_QUERY_URL = "https://www.alphavantage.co/query"
 ALPHA_VANTAGE_ANALYTICS_URL = "https://alphavantageapi.co/timeseries/analytics"
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,7 +44,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'app'
+    'app',
+    'django_plotly_dash.apps.DjangoPlotlyDashConfig',
+    # 'channels',
+    # 'channels_redis'
 ]
 
 MIDDLEWARE = [
@@ -58,7 +58,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'whitenoise.middleware.WhiteNoiseMiddleware', #Uncomment when deploying (for static files)
+    # 'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django_plotly_dash.middleware.BaseMiddleware'
 ]
 
 ROOT_URLCONF = 'fyp.urls'
@@ -80,7 +81,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'fyp.wsgi.application'
-
+ASGI_APPLICATION = 'fyp.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -128,8 +129,33 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+# STATICFILES_FINDERS = [
+#     'django_plotly_dash.finders.DashAssetFinder',
+#     'django_plotly_dash.finders.DashComponentFinder'
+# ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# # Channel layers
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             'hosts': [('127.0.0.1', 6379),],
+#         }
+#     }
+# }
+
+# Plotly Components
+# PLOTLY_COMPONENTS = [
+#     'dash_core_components',
+#     'dash_html_components',
+#     'dash_renderer',
+#     'dpd_components'
+# ]
+
+# To enable frames within HTML Documents
+X_FRAME_OPTIONS = 'SAMEORIGIN'

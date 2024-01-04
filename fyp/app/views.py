@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Asset, PortfolioAsset, Portfolio, Profile
 from .forms import AddToPortfolioForm, UserRegisterForm, ProfileForm, PortfolioForm
-from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_asset_details, get_expected_market_return, get_risk_free_rate
+from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_asset_details, get_expected_market_return, get_linear_regression, get_risk_free_rate, get_simple_moving_average
 
 # Create your views here.
 
@@ -168,7 +168,6 @@ def portfolio_suggest_weightage(request, portfolio_id):
 
 def search_stocks(request):
     search_text = request.GET.get('search_text', '')
-    print(search_text)
     if search_text:
         # Call Alpha Vantage API
         response = requests.get(
@@ -185,3 +184,9 @@ def search_stocks(request):
             # Process and return the relevant part of the response
             return JsonResponse(search_results, safe=False)
     return JsonResponse([], safe=False)
+
+def show_chart(request, symbol):
+    chart = get_simple_moving_average(symbol)
+    predicted_prices = get_linear_regression(symbol)
+    context = {'chart': chart}
+    return render(request, 'asset/asset_dashboard.html', context)

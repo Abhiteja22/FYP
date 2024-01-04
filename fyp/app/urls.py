@@ -14,5 +14,6 @@ urlpatterns = [
     path('stocks/', views.asset_list, name='asset_list'),  # Default to USA
     path('stocks/<str:country>/', views.asset_list, name='asset_list_country'),
     path('assets/<str:symbol>/', views.asset_detail_view, name='asset_detail'),
+    path('asset/<str:symbol>/dashboard', views.show_chart, name='asset_dashboard'),
     path('search_stocks/', views.search_stocks, name='search_stocks'),
 ]

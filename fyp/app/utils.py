@@ -1,8 +1,13 @@
 from decimal import Decimal
 import numpy as np
+import pandas as pd
 from scipy.optimize import minimize
 import requests
 from django.conf import settings
+import plotly.graph_objects as go
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from datetime import datetime, timedelta
 
 def calculate_expected_asset_return(beta, risk_free_rate, expected_market_return):
     if beta is None or risk_free_rate is None or expected_market_return is None:
@@ -303,3 +308,80 @@ def calculate_optimal_weights_portfolio(profile, portfolio_assets):
     weights = maximize_sharpe_ratio(sorted_expected_returns, cov_matrix, risk_free_rate)
 
     return zip(sorted_asset_symbols, weights)
+
+def get_simple_moving_average(symbol):
+    url = settings.ALPHA_VANTAGE_QUERY_URL
+    params = {
+        "function": "SMA",
+        "symbol": symbol,
+        "interval": "daily",
+        "time_period": 10,
+        "series_type": "close",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params)
+    if response.status_code == 200:
+        data = response.json()
+        # Convert the SMA data to a DataFrame
+        df = pd.DataFrame([(date, values['SMA']) for date, values in data['Technical Analysis: SMA'].items()], columns=['Date', 'SMA'])
+        df['Date'] = pd.to_datetime(df['Date'])
+        
+        # Plotting
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df['Date'], y=df['SMA'], mode='lines', name='SMA'))
+        fig.update_layout(title='Simple Moving Average (SMA)',
+                        xaxis_title='Date',
+                        yaxis_title='SMA Value',
+                        template='plotly_dark')  # Choose a template that suits your style
+        chart = fig.to_html()
+        return chart
+    else:
+        return None
+    
+def get_linear_regression(symbol):
+    url = settings.ALPHA_VANTAGE_QUERY_URL
+    params = {
+        "function": "TIME_SERIES_DAILY_ADJUSTED",
+        "symbol": symbol,
+        "outputsize": "full",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params)
+    if response.status_code == 200:
+        data = response.json()
+        # Convert data to DataFrame
+        df = pd.DataFrame(data["Time Series (Daily)"]).T
+        df['date'] = pd.to_datetime(df.index)
+        df['adj_close'] = df['5. adjusted close'].astype(float)
+
+        # Convert date to ordinal
+        df['date_ordinal'] = pd.to_datetime(df['date']).map(datetime.toordinal)
+
+        # Prepare the features (X) and target (y)
+        X = df[['date_ordinal']]
+        y = df['adj_close']
+        print(X.head())
+        print(y.head())
+
+        # Create and train the model
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # Predict for the Next Three Months
+        last_date = df['date'].max()
+        future_dates = [last_date + timedelta(days=i) for i in range(1, 91)]  # 90 days ~ roughly 3 months
+        future_dates_ordinal = [date.toordinal() for date in future_dates]
+        future_dates_df = pd.DataFrame(future_dates_ordinal, columns=['date_ordinal'])
+        print(future_dates_df.head())
+
+        # Predict future prices
+        predicted_prices = model.predict(future_dates_df)
+
+        predictions = pd.DataFrame({'Date': future_dates, 'Predicted Price': predicted_prices})
+        print(predictions.head())
+        
+        return predictions
+    else:
+        return None
