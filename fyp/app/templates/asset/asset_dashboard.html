@@ -2,6 +2,12 @@
 
 {% block content %}
   {{ chart|safe }}
-  {{ acf|safe }}
-  {{ pacf|safe }}
+  <div id="ARIMA-chart"></div>
+  <script>
+    // Retrieve the plot JSON from the Django context
+    var plot = {{ ARIMA|safe }};
+
+    // Render the plot in the 'plotly-chart' div
+    Plotly.newPlot('ARIMA-chart', plot.data, plot.layout);
+  </script>
 {% endblock %}

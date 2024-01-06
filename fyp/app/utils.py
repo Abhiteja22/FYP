@@ -7,9 +7,11 @@ from django.conf import settings
 import plotly.graph_objects as go
 from statsmodels.tsa.arima.model import ARIMA
 from datetime import timedelta
-import matplotlib.pyplot as plt
-from statsmodels.tsa.stattools import acf, pacf
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import plotly
+import plotly.express as px
+import json
+from pmdarima import auto_arima
+
 
 def calculate_expected_asset_return(beta, risk_free_rate, expected_market_return):
     if beta is None or risk_free_rate is None or expected_market_return is None:
@@ -341,6 +343,7 @@ def get_simple_moving_average(symbol):
     else:
         return None
     
+# TODO: ARIMA
 def get_linear_regression(symbol):
     url = settings.ALPHA_VANTAGE_QUERY_URL
     params = {
@@ -364,7 +367,7 @@ def get_linear_regression(symbol):
 
         # ARIMA Model
         # Note: You might need to adjust the order (p, d, q) based on your data's characteristics
-        model = ARIMA(df['adj_close'], order=(1, 1, 1)) 
+        model = ARIMA(df['adj_close'], order=(5, 2, 0)) 
         fitted_model = model.fit()
 
         # Forecast for the Next Three Months
@@ -375,8 +378,64 @@ def get_linear_regression(symbol):
         last_date = df.index[-1].to_timestamp()
         future_dates = [last_date + timedelta(days=i) for i in range(1, 91)]
         predictions = pd.DataFrame({'Date': future_dates, 'Predicted Price': predicted_prices.values})
-        print(predictions.head())
+        print(predictions)
+
+        # Plotting using plotly express
+        fig = px.line(predictions, x='Date', y='Predicted Price', title='Price Predictions')
+        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+        # time_series_data = df['adj_close']
+        # # Assuming 'time_series_data' is your time series data
+        # model = auto_arima(time_series_data, start_p=1, start_q=1,
+        #                 max_p=5, max_q=5, m=12,
+        #                 seasonal=True, d=None, D=None, trace=True,
+        #                 error_action='ignore', suppress_warnings=True,
+        #                 stepwise=True)
+
+        # print(model.summary())
         
-        return [predictions, acf_plot, pacf_plot]
+        return graphJSON
     else:
         return None
+
+def get_historical_returns(symbol):
+    url = settings.ALPHA_VANTAGE_QUERY_URL
+    params = {
+        "function": "TIME_SERIES_DAILY_ADJUSTED",
+        "symbol": symbol,
+        "outputsize": "full",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        historical_data = pd.DataFrame.from_dict(data['Time Series (Daily)'], orient='index')
+        historical_data.index = pd.to_datetime(historical_data.index)
+        historical_data.sort_index(inplace=True)
+        historical_data['5. adjusted close'] = historical_data['5. adjusted close'].apply(Decimal)
+        historical_prices = historical_data['2015-01-02':]['5. adjusted close']
+        historical_returns = historical_prices.pct_change().dropna()
+        return historical_returns
+    else:
+        return None
+
+def get_VaR(portfolioAssets):
+    portfolio_returns = None
+    total_portfolio_value = sum([get_asset_price(asset.asset_ticker) * asset.quantity for asset in portfolioAssets])
+    for asset in portfolioAssets:
+        historical_asset_returns = get_historical_returns(asset.asset_ticker)
+        # Calculate weight of each asset in the portfolio
+        asset_value = get_asset_price(asset.asset_ticker) * asset.quantity
+        weight = asset_value / total_portfolio_value
+        weighted_returns = historical_asset_returns * weight
+
+        # Aggregate portfolio returns
+        if portfolio_returns is None:
+            portfolio_returns = weighted_returns
+        else:
+            portfolio_returns = portfolio_returns.add(weighted_returns, fill_value=0)
+    portfolio_returns = portfolio_returns.astype(float)
+    var_95 = np.percentile(portfolio_returns, 5)
+    cvar_95 = portfolio_returns[portfolio_returns <= var_95].mean()
+    return var_95, cvar_95

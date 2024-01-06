@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Asset, PortfolioAsset, Portfolio, Profile
 from .forms import AddToPortfolioForm, UserRegisterForm, ProfileForm, PortfolioForm
-from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_asset_details, get_expected_market_return, get_linear_regression, get_risk_free_rate, get_simple_moving_average
+from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_risk_free_rate, get_simple_moving_average
 
 # Create your views here.
 
@@ -110,6 +110,10 @@ def portfolio_details(request, pk):
             combined_assets[asset.asset_ticker] = asset.quantity
 
     portfolio.portfolio_details = calculate_portfolio_details(combined_assets, profile)
+
+    VaR, CVaR = get_VaR(portfolio_assets)
+    print(f"VaR at 95% confidence level: {VaR}")
+    print(f"CVaR at 95% confidence level: {CVaR}")
     
     return render(request, 'portfolio/portfolio_details.html', {'portfolio': portfolio})
 
@@ -187,9 +191,6 @@ def search_stocks(request):
 
 def show_chart(request, symbol):
     chart = get_simple_moving_average(symbol)
-    predicted_prices = get_linear_regression(symbol)
-    predicted_prices = predicted_prices[0]
-    acf_plot = predicted_prices[1]
-    pacf_plot = predicted_prices[2]
-    context = {'chart': chart, 'acf': acf_plot, 'pacf': pacf_plot}
+    predicted_prices_chart = get_linear_regression(symbol)
+    context = {'chart': chart, 'ARIMA': predicted_prices_chart}
     return render(request, 'asset/asset_dashboard.html', context)
