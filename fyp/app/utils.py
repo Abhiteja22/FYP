@@ -419,6 +419,27 @@ def get_historical_returns(symbol):
         return historical_returns
     else:
         return None
+    
+def get_historical_values(symbol):
+    url = settings.ALPHA_VANTAGE_QUERY_URL
+    params = {
+        "function": "TIME_SERIES_DAILY_ADJUSTED",
+        "symbol": symbol,
+        "outputsize": "full",
+        "apikey": settings.ALPHA_VANTAGE_API_KEY,
+        "entitlement": "delayed"
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        historical_data = pd.DataFrame.from_dict(data['Time Series (Daily)'], orient='index')
+        historical_data.index = pd.to_datetime(historical_data.index)
+        historical_data.sort_index(inplace=True)
+        historical_data['5. adjusted close'] = historical_data['5. adjusted close'].apply(Decimal)
+        historical_prices = historical_data['2015-01-02':]['5. adjusted close']
+        return historical_prices
+    else:
+        return None
 
 def get_VaR(portfolioAssets):
     portfolio_returns = None
@@ -439,3 +460,56 @@ def get_VaR(portfolioAssets):
     var_95 = np.percentile(portfolio_returns, 5)
     cvar_95 = portfolio_returns[portfolio_returns <= var_95].mean()
     return var_95, cvar_95
+
+def get_sortino_ratio(portfolioAssets):
+    portfolio_returns = None
+    total_portfolio_value = sum([get_asset_price(asset.asset_ticker) * asset.quantity for asset in portfolioAssets])
+    for asset in portfolioAssets:
+        historical_asset_returns = get_historical_returns(asset.asset_ticker)
+        # Calculate weight of each asset in the portfolio
+        asset_value = get_asset_price(asset.asset_ticker) * asset.quantity
+        weight = asset_value / total_portfolio_value
+        weighted_returns = historical_asset_returns * weight
+
+        # Aggregate portfolio returns
+        if portfolio_returns is None:
+            portfolio_returns = weighted_returns
+        else:
+            portfolio_returns = portfolio_returns.add(weighted_returns, fill_value=0)
+    portfolio_returns = portfolio_returns.astype(float)
+    risk_free_rate = get_risk_free_rate('3month')
+    # Calculate downside deviation (only considering negative returns)
+    negative_returns = portfolio_returns[portfolio_returns < 0]
+    downside_deviation = Decimal(np.sqrt(np.mean(negative_returns**2)))
+    annualized_portfolio_return = np.mean(portfolio_returns) * 252
+    annualized_portfolio_return = Decimal(annualized_portfolio_return)
+    sortino_ratio = (annualized_portfolio_return - risk_free_rate) / downside_deviation
+
+    return sortino_ratio
+
+def get_maximum_drawdown(portfolioAssets):
+    # Initialize an empty DataFrame for the portfolio values
+    historical_portfolio_values = pd.DataFrame()
+    for asset in portfolioAssets:
+        historical_asset_values = get_historical_values(asset.asset_ticker)
+        asset_value_over_time = historical_asset_values * asset.quantity
+        if historical_portfolio_values.empty:
+            historical_portfolio_values = asset_value_over_time.to_frame(name=asset.asset_ticker)
+        else:
+            historical_portfolio_values = historical_portfolio_values.join(asset_value_over_time.to_frame(name=asset.asset_ticker), how='outer')
+
+    # Sum the values across columns (assets) to get the total portfolio value at each time point
+    historical_portfolio_values['Total Portfolio Value'] = historical_portfolio_values.sum(axis=1)
+    historical_portfolio_values = historical_portfolio_values[['Total Portfolio Value']]
+    rolling_max = historical_portfolio_values.cummax()
+    
+    # Calculate drawdown as the percentage drop from the peak
+    drawdown = (historical_portfolio_values - rolling_max) / rolling_max
+    # Maximum drawdown
+    max_drawdown = drawdown.min()['Total Portfolio Value']
+    
+    return max_drawdown
+
+# TODO: Do after implementing get_portfolio_beta() function
+def get_portfolio_alpha():
+    return None

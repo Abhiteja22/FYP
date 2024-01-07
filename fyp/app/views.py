@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Asset, PortfolioAsset, Portfolio, Profile
 from .forms import AddToPortfolioForm, UserRegisterForm, ProfileForm, PortfolioForm
-from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_risk_free_rate, get_simple_moving_average
+from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_maximum_drawdown, get_risk_free_rate, get_simple_moving_average, get_sortino_ratio
 
 # Create your views here.
 
@@ -112,8 +112,12 @@ def portfolio_details(request, pk):
     portfolio.portfolio_details = calculate_portfolio_details(combined_assets, profile)
 
     VaR, CVaR = get_VaR(portfolio_assets)
+    sortino_ratio = get_sortino_ratio(portfolio_assets)
+    maximum_drawdown = get_maximum_drawdown(portfolio_assets)
     print(f"VaR at 95% confidence level: {VaR}")
     print(f"CVaR at 95% confidence level: {CVaR}")
+    print(f"Sortino Ratio with Target return 0%: {sortino_ratio}")
+    print(f"Maximum Drawdown: {maximum_drawdown * 100:.2f}%")
     
     return render(request, 'portfolio/portfolio_details.html', {'portfolio': portfolio})
 
