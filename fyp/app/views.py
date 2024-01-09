@@ -12,6 +12,10 @@ from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_deta
 
 # Create your views here.
 
+def index(request):
+    template = loader.get_template("index.html")
+    return HttpResponse(template.render())
+
 @login_required
 def main(request):
     template = loader.get_template("main.html")
