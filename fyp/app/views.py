@@ -73,12 +73,22 @@ def portfolio_create(request):
         form = PortfolioForm(request.POST)
         if form.is_valid():
             portfolio = form.save(commit=False)
+            selected_assets = form.cleaned_data['assets']
+            for asset in selected_assets:
+                quantity_key = f'quantity-{asset.ticker}'
+                quantity = request.POST.get(quantity_key, 0)
+                PortfolioAsset.objects.create(
+                    portfolio=portfolio,
+                    asset_ticker=asset.ticker,
+                    quantity=quantity
+                )
             portfolio.user = request.user
             portfolio.save()
             return redirect('portfolio_list')
     else:
         form = PortfolioForm()
-    return render(request, 'portfolio/portfolio_form.html', {'form': form})
+    assetTickers = {str(asset.id): asset.ticker for asset in Asset.objects.filter(country='USA', type="Stock")}
+    return render(request, 'portfolio/portfolio_form.html', {'form': form, 'assetTickers': assetTickers})
 
 # TODO: Update portfolio update page
 @login_required 

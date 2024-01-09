@@ -9,6 +9,13 @@
   <title>Dashboard - NiceAdmin Bootstrap Template</title>
   <meta content="" name="description">
   <meta content="" name="keywords">
+  <title>{% block title %}My Site{% endblock %}</title>
+
+  <!-- Autocomplete Scripts -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="{% static 'js/autocomplete.js' %}"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  {% comment %} <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}"> {% endcomment %}
 
   <!-- Favicons -->
   <link href="{% static 'assets/img/favicon.png' %}" rel="icon">
@@ -40,7 +47,13 @@
 </head>
 
 <body>
-
+  {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   <!-- ======= Header ======= -->
   {% include 'partials/_header.html' %}
   <!-- End Header -->
