@@ -45,20 +45,17 @@ class AssetForm(forms.ModelForm):
         model = Asset
         fields = ['name', 'type']
 
-class PortfolioForm(forms.ModelForm):
-    assets = forms.ModelMultipleChoiceField(
-        queryset=Asset.objects.filter(country='USA', type="Stock"),  # Filter only active assets
-        widget=forms.SelectMultiple(attrs={'class': 'select2'}),  # Allows multiple selection
-        required=False  # Make selection optional
-    )
+class PortfolioAssetForm(forms.ModelForm):
+    asset_ticker = forms.ModelChoiceField(queryset=Asset.objects.all(), empty_label="Select Asset", to_field_name="ticker")
 
     class Meta:
+        model = PortfolioAsset
+        fields = ['asset_ticker', 'quantity']
+
+class PortfolioForm(forms.ModelForm):
+    class Meta:
         model = Portfolio
-        fields = ['name', 'assets']
-   
-    def __init__(self, *args, **kwargs):
-        super(PortfolioForm, self).__init__(*args, **kwargs)
-        self.fields['assets'].queryset = Asset.objects.filter(country='USA', type="Stock")
+        fields = ['name']
 
 # Create a formset for assets within a portfolio
 # AssetFormSet = inlineformset_factory(Portfolio, Asset, form=AssetForm, extra=1)

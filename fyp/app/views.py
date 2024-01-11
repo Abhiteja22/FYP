@@ -1,3 +1,4 @@
+import json
 import requests
 from django.http import HttpResponse, JsonResponse
 from django.template import loader
@@ -6,8 +7,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.forms import modelformset_factory
 from .models import Asset, PortfolioAsset, Portfolio, Profile
-from .forms import AddToPortfolioForm, UserRegisterForm, ProfileForm, PortfolioForm
+from .forms import AddToPortfolioForm, PortfolioAssetForm, UserRegisterForm, ProfileForm, PortfolioForm
 from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_maximum_drawdown, get_risk_free_rate, get_simple_moving_average, get_sortino_ratio
 
 # Create your views here.
@@ -69,26 +71,26 @@ def profile_update(request):
 # TODO: Update portfolio creation page to be able to add assets from the page
 @login_required
 def portfolio_create(request):
+    PortfolioAssetFormSet = modelformset_factory(PortfolioAsset, form=PortfolioAssetForm, extra=1)
     if request.method == 'POST':
         form = PortfolioForm(request.POST)
-        if form.is_valid():
+        formset = PortfolioAssetFormSet(request.POST)
+        if form.is_valid() and formset.is_valid():
             portfolio = form.save(commit=False)
-            selected_assets = form.cleaned_data['assets']
-            for asset in selected_assets:
-                quantity_key = f'quantity-{asset.ticker}'
-                quantity = request.POST.get(quantity_key, 0)
-                PortfolioAsset.objects.create(
-                    portfolio=portfolio,
-                    asset_ticker=asset.ticker,
-                    quantity=quantity
-                )
             portfolio.user = request.user
             portfolio.save()
+            formset.save(commit=False)
+            for asset_form in formset:
+                asset_instance = asset_form.cleaned_data['asset_ticker']
+                asset = asset_form.save(commit=False)
+                asset.asset_ticker = asset_instance.ticker
+                asset.portfolio = portfolio
+                asset.save()
             return redirect('portfolio_list')
     else:
         form = PortfolioForm()
-    assetTickers = {str(asset.id): asset.ticker for asset in Asset.objects.filter(country='USA', type="Stock")}
-    return render(request, 'portfolio/portfolio_form.html', {'form': form, 'assetTickers': assetTickers})
+        formset = PortfolioAssetFormSet(queryset=PortfolioAsset.objects.none())
+    return render(request, 'portfolio/portfolio_form.html', {'form': form, 'formset': formset})
 
 # TODO: Update portfolio update page
 @login_required 
