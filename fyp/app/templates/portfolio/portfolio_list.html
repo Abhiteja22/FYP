@@ -1,6 +1,15 @@
-{% extends 'base_generic.html' %}
+{% extends 'index.html' %}
 
 {% block content %}
+<div class="pagetitle">
+  <h1>LIST OF YOUR PORTFOLIOS</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="index.html">Portfolio</a></li>
+      <li class="breadcrumb-item active">Portfolio list</li>
+    </ol>
+  </nav>
+</div>
 {% for portfolio in portfolios %}
 <p>
   <a href="{% url 'portfolio_details' pk=portfolio.pk %}">

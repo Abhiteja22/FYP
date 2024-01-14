@@ -1,6 +1,15 @@
-{% extends 'base_generic.html' %}
+{% extends 'index.html' %}
 
 {% block content %}
+<div class="pagetitle">
+  <h1>Asset</h1>
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="index.html">Asset</a></li>
+      <li class="breadcrumb-item active">Asset details</li>
+    </ol>
+  </nav>
+</div>
   <h2>Asset Details: {{ symbol }} {{ asset.Name }}</h2>
   {% if asset %}
   <p>Current Price: {{ asset.Price }}</p>

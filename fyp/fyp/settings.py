@@ -29,7 +29,7 @@ ALLOWED_HOSTS = []
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'main'
+LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'login'
 
 IEX_API_KEY = "sk_a82134349a734183a61d4c595cff3ccc"
