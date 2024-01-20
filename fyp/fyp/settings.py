@@ -36,9 +36,11 @@ IEX_API_KEY = "sk_a82134349a734183a61d4c595cff3ccc"
 ALPHA_VANTAGE_API_KEY = "FUPT81G3YM7VYKAX"     # Free API Key: "APFOC2NTCXD3NUKK"
 ALPHA_VANTAGE_QUERY_URL = "https://www.alphavantage.co/query"
 ALPHA_VANTAGE_ANALYTICS_URL = "https://alphavantageapi.co/timeseries/analytics"
+OPENAI_API_KEY = "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"
 
 # Application definition
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,9 +48,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app',
-    'django_plotly_dash.apps.DjangoPlotlyDashConfig',
-    # 'channels',
-    # 'channels_redis'
+    'chatbot'
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # The origin of your React app
+    "http://127.0.0.1:3000",
+    # Add other origins as needed
 ]
 
 MIDDLEWARE = [
@@ -59,8 +68,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware'
     # 'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django_plotly_dash.middleware.BaseMiddleware'
 ]
 
 ROOT_URLCONF = 'fyp.urls'
