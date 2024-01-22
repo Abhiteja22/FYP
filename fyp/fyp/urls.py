@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from app.views import *
 
 
 urlpatterns = [
@@ -23,4 +24,5 @@ urlpatterns = [
     path('chatbot/', include('chatbot.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
+    path('', ReactView.as_view(), name="anything")
 ]

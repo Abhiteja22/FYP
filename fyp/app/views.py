@@ -8,6 +8,9 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms import modelformset_factory
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from . serializer import *
 from .models import Asset, PortfolioAsset, Portfolio, Profile
 from .forms import AddToPortfolioForm, PortfolioAssetForm, UserRegisterForm, ProfileForm, PortfolioForm
 from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_maximum_drawdown, get_risk_free_rate, get_simple_moving_average, get_sortino_ratio
@@ -214,3 +217,6 @@ def show_chart(request, symbol):
     predicted_prices_chart = get_linear_regression(symbol)
     context = {'chart': chart, 'ARIMA': predicted_prices_chart}
     return render(request, 'asset/asset_dashboard.html', context)
+
+class ReactView(APIView):
+    return HttpResponse("This is working")
