@@ -10,7 +10,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms import modelformset_factory
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from . serializer import *
+from rest_framework import viewsets, permissions
+from .serializers import *
 from .models import Asset, PortfolioAsset, Portfolio, Profile
 from .forms import AddToPortfolioForm, PortfolioAssetForm, UserRegisterForm, ProfileForm, PortfolioForm
 from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_maximum_drawdown, get_risk_free_rate, get_simple_moving_average, get_sortino_ratio
@@ -218,5 +219,82 @@ def show_chart(request, symbol):
     context = {'chart': chart, 'ARIMA': predicted_prices_chart}
     return render(request, 'asset/asset_dashboard.html', context)
 
-class ReactView(APIView):
-    return HttpResponse("This is working")
+class AssetView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    queryset = Asset.objects.all()
+    serializer_class = AssetSerializer
+
+    def list(self, request):
+        queryset = self.queryset
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def retrieve(self, request, pk=None):
+        asset = self.queryset.get(pk=pk)
+        serializer = self.serializer_class(asset)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        asset = self.queryset.get(pk=pk)
+        serializer = self.serializer_class(asset, data= request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def partial_update(self, request, pk=None):
+        pass
+
+    def destroy(self, request, pk=None):
+        asset = self.queryset.get(pk=pk)
+        asset.delete()
+        return Response(status=204)
+    
+class PortfolioView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    queryset = Portfolio.objects.all()
+    serializer_class = PortfolioSerializer
+
+    def list(self, request):
+        queryset = self.queryset
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def retrieve(self, request, pk=None):
+        portfolio = self.queryset.get(pk=pk)
+        serializer = self.serializer_class(portfolio)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        portfolio = self.queryset.get(pk=pk)
+        serializer = self.serializer_class(portfolio, data= request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def partial_update(self, request, pk=None):
+        pass
+
+    def destroy(self, request, pk=None):
+        portfolio = self.queryset.get(pk=pk)
+        portfolio.delete()
+        return Response(status=204)

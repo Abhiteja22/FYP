@@ -24,5 +24,5 @@ urlpatterns = [
     path('chatbot/', include('chatbot.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
-    path('', ReactView.as_view(), name="anything")
+    # path('', ReactView.as_view(), name="anything")
 ]

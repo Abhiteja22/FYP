@@ -52,8 +52,6 @@ INSTALLED_APPS = [
     'corsheaders'
 ]
 
-REST_FRAMEWORK = {'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permission.AllowAny']}
-
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # The origin of your React app
     "http://127.0.0.1:3000",
