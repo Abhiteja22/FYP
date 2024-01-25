@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register('assets', views.AssetView, basename='assets')
 router.register('portfolio', views.PortfolioView, basename='portfolio')
+router.register('portfolioAsset', views.PortfolioAssetView, basename='portfolioAsset')
 urlpatterns= router.urls
 
 # urlpatterns = [

@@ -21,6 +21,8 @@ export default function MyTextField(props) {
             sx={{width:{width}}}
             onChange={onChange}
             value={value}
+            error = {!!error}
+            helperText = {error?.message}
             />
         )}
     />

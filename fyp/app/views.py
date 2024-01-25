@@ -225,7 +225,7 @@ class AssetView(viewsets.ViewSet):
     serializer_class = AssetSerializer
 
     def list(self, request):
-        queryset = self.queryset
+        queryset = Asset.objects.all()
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
@@ -265,7 +265,7 @@ class PortfolioView(viewsets.ViewSet):
     serializer_class = PortfolioSerializer
 
     def list(self, request):
-        queryset = self.queryset
+        queryset = Portfolio.objects.all()
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
@@ -297,4 +297,44 @@ class PortfolioView(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         portfolio = self.queryset.get(pk=pk)
         portfolio.delete()
+        return Response(status=204)
+    
+class PortfolioAssetView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    queryset = PortfolioAsset.objects.all()
+    serializer_class = PortfolioAssetSerializer
+
+    def list(self, request):
+        queryset = PortfolioAsset.objects.all() # Adjust later
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def retrieve(self, request, pk=None):
+        portfolioAsset = self.queryset.get(pk=pk)
+        serializer = self.serializer_class(portfolioAsset)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        portfolioAsset = self.queryset.get(pk=pk)
+        serializer = self.serializer_class(portfolioAsset, data= request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def partial_update(self, request, pk=None):
+        pass
+
+    def destroy(self, request, pk=None):
+        portfolioAsset = self.queryset.get(pk=pk)
+        portfolioAsset.delete()
         return Response(status=204)

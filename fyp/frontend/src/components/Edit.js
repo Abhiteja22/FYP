@@ -1,27 +1,33 @@
 
-import React from "react";
+import {React, useEffect} from "react";
 import { Box, Typography, Button } from "@mui/material";
 import MyTextField from "./forms/MyTextField";
 import {useForm} from 'react-hook-form';
 import AxiosInstance from "./Axios";
-import { useNavigate } from "react-router-dom";
-import { yupResolver } from "@hookform/resolvers/yup"
-import * as yup from "yup"
+import { useNavigate, useParams } from "react-router-dom";
 
+const Edit = () => {
+    const MyParam = useParams()
+    const myId = MyParam.id
 
+    const GetData = () => {
+        AxiosInstance.get(`portfolio/${myId}`).then((res) => {
+            console.log(res.data)
+            setValue('name',res.data.name)
+        })
+    }
 
-const Create = () => {
+    useEffect(() => {
+        GetData();
+    },[])
+
     const navigate = useNavigate()
     const defaultValues = {
         name: '',
     }
-    const schema = yup
-    .object({
-        name: yup.string().required('Name is a required field'),
-    })
-    const {handleSubmit, reset, setValue, control} = useForm({defaultValues:defaultValues, resolver: yupResolver(schema)})
+    const {handleSubmit, reset, setValue, control} = useForm({defaultValues:defaultValues})
     const submission = (data) => {
-        AxiosInstance.post(`portfolio/`, {
+        AxiosInstance.put(`portfolio/${myId}/`, {
             name: data.name,
         })
         .then((res) => {
@@ -33,7 +39,7 @@ const Create = () => {
             <form onSubmit={handleSubmit(submission)}>
             <Box sx={{display:'flex', width:'100%', backgroundColor:'#00003f', marginBottom:'10px'}}>
                 <Typography sx={{marginLeft:'20px', color:'#fff'}}>
-                    Create Portfolio
+                    Create Records
                 </Typography>
             </Box>
 
@@ -60,4 +66,4 @@ const Create = () => {
     )
 }
 
-export default Create
+export default Edit

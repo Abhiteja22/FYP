@@ -8,6 +8,7 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import Chip from '@mui/material/Chip';
 import {Controller} from 'react-hook-form';
+import FormHelperText from '@mui/material/FormHelperText';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -42,23 +43,10 @@ function getStyles(name, personName, theme) {
   };
 }
 
-export default function MultipleSelectChip(props) {
+export default function MultipleSelectField(props) {
   const theme = useTheme();
-  const [personName, setPersonName] = React.useState([]);
-
-  const handleChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-    setPersonName(
-      // On autofill we get a stringified value.
-      typeof value === 'string' ? value.split(',') : value,
-    );
-  };
-  const {label, name, control, width} = props
+  const {label, name, control, width, options} = props
   return (
-        <FormControl sx={{width:{width}}}>
-        <InputLabel id="demo-multiple-chip-label">{label}</InputLabel>
             <Controller
             name = {name}
             control = {control}
@@ -67,12 +55,14 @@ export default function MultipleSelectChip(props) {
                 fieldState:{error},
                 formState,
             }) => (
+                <FormControl sx={{width:{width}}}>
+                <InputLabel id="demo-multiple-chip-label">{label}</InputLabel>
                 <Select
                 labelId="demo-multiple-chip-label"
                 id="demo-multiple-chip"
                 multiple
-                value={personName}
-                onChange={handleChange}
+                value={value}
+                onChange={onChange}
                 input={<OutlinedInput id="select-multiple-chip" label="Chip" />}
                 renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -81,20 +71,24 @@ export default function MultipleSelectChip(props) {
                     ))}
                     </Box>
                 )}
+                error = {!!error}
                 MenuProps={MenuProps}
                 >
-                {names.map((name) => (
-                    <MenuItem
-                    key={name}
-                    value={name}
-                    style={getStyles(name, personName, theme)}
-                    >
-                    {name}
-                    </MenuItem>
-                ))}
+                {
+                    options.map((option) => (
+                        <MenuItem
+                            key={option.id}
+                            value={option.id}
+                            >
+                            {option.name}
+                        </MenuItem>
+                    ))
+                }
                 </Select>
+                <FormHelperText sx={{color:"#d32f2f"}}> {error?.message} </FormHelperText>
+                </FormControl>
             )}
             />
-        </FormControl>
+        
   );
 }
