@@ -18,6 +18,15 @@ def home(requests):
 
 import yfinance as yf
 
+def get_user_risk_level():
+    pass
+
+def get_user_expected_market_return():
+    pass
+
+def get_user_risk_free_rate():
+    pass
+
 def get_asset_price_yahoo(ticker):
     """Make a request to the yfinance API to get the asset price using asset's ticker symbol as input."""
     ticker_data = yf.Ticker(ticker)
@@ -29,6 +38,18 @@ def get_asset_beta_yahoo(ticker):
     ticker_data = yf.Ticker(ticker)
     beta = ticker_data.info.get('beta')
     return beta
+
+def get_asset_stddev_yahoo():
+    pass
+
+def get_asset_expected_return():
+    pass
+
+def get_asset_sharpe_ratio():
+    pass
+
+def get_portfolio_details():
+    pass
 
 def get_asset_details(ticker):
     """Gets all the required details of a stock to display to user using asset's ticker symbol as input."""
@@ -43,8 +64,6 @@ def chatbot(request):
     # Tools
     search = SerpAPIWrapper(serpapi_api_key="f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7")
     serp_api_tool = StructuredTool.from_function(search.run)
-    # get_asset_price_yahoo_tool = StructuredTool.from_function(get_asset_price_yahoo)
-    # get_asset_beta_yahoo_tool = StructuredTool.from_function(get_asset_beta_yahoo)
     get_asset_details_tool = StructuredTool.from_function(get_asset_details)
     tools = [serp_api_tool, get_asset_details_tool]
 
@@ -73,7 +92,6 @@ def chatbot(request):
     )
 
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-    #agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
 
     response = agent_executor.invoke({"input":message})["output"]
     return Response({'message': response})
