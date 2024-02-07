@@ -1,4 +1,3 @@
-import Chatbot from './Chatbot'
 import './App.css';
 import {Routes, Route} from 'react-router-dom';
 import Home from './components/Home';
@@ -8,6 +7,9 @@ import MiniDrawer from './components/NavBar';
 import Edit from './components/Edit';
 import Delete from './components/Delete';
 import CreatePortfolioAsset from './components/CreatePortfolioAsset';
+import Chatbot from './components/Chatbot';
+import Chat from './components/Chat';
+import Interact from './components/Interact';
 
 function App() {
   return (
@@ -21,6 +23,9 @@ function App() {
             <Route path='/edit/:id' element={<Edit/>}/>
             <Route path='/delete/:id' element={<Delete/>}/>
             <Route path='/createPortfolioAsset' element={<CreatePortfolioAsset/>}/>
+            <Route path='/chatbot' element={<Chatbot/>}/>
+            <Route path='/chat' element={<Chat/>}/>
+            <Route path='/chat/:chatId' element={<Interact/>}/>
           </Routes>
         }
       />

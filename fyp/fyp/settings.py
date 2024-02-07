@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'app',
     'chatbot',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders'
 ]
 
@@ -170,3 +171,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # To enable frames within HTML Documents
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}

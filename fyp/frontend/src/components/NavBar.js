@@ -19,6 +19,8 @@ import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
 import HomeIcon from '@mui/icons-material/Home';
+import AddIcon from '@mui/icons-material/Add';
+import AssistantIcon from '@mui/icons-material/Assistant';
 import {Link, useLocation} from 'react-router-dom';
 
 const drawerWidth = 240;
@@ -150,7 +152,7 @@ export default function MiniDrawer(props) {
                     justifyContent: 'center',
                   }}
                 >
-                    <HomeIcon/>
+                <HomeIcon/>
                 </ListItemIcon>
                 <ListItemText primary={'Home'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
@@ -158,7 +160,53 @@ export default function MiniDrawer(props) {
         </List>
         <Divider />
         <List>
-          {['View Portfolios', 'Create Portfolios', 'Suggest portfolios'].map((text, index) => (
+          <ListItem key={'Create Portfolios'} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                  }}
+                  component={Link}
+                  to="/create"
+                  selected={"/create" === path}
+                >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 3 : 'auto',
+                    justifyContent: 'center',
+                  }}
+                >
+                <AddIcon/>
+                </ListItemIcon>
+                <ListItemText primary={'Create Portfolios'} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem key={'Chatbot'} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                  }}
+                  component={Link}
+                  to="/chatbot"
+                  selected={"/chatbot" === path}
+                >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 3 : 'auto',
+                    justifyContent: 'center',
+                  }}
+                >
+                <AssistantIcon/>
+                </ListItemIcon>
+                <ListItemText primary={'Chatbot'} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+          {['View Portfolios', 'Suggest portfolios'].map((text, index) => (
             <ListItem key={text} disablePadding sx={{ display: 'block' }}>
               <ListItemButton
                 sx={{
@@ -183,7 +231,7 @@ export default function MiniDrawer(props) {
         </List>
         <Divider />
         <List>
-          {['AI Chat', 'View Assets', 'View Profile'].map((text, index) => (
+          {['View Assets', 'View Profile'].map((text, index) => (
             <ListItem key={text} disablePadding sx={{ display: 'block' }}>
               <ListItemButton
                 sx={{
