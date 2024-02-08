@@ -27,6 +27,28 @@ class ChatView(views.APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    def delete(self, request, pk, format=None):
+        chat = Chat.objects.get(pk=pk)
+        chat.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class SingleChatView(views.APIView):
+    serializer_class = ChatSerializer
+    authentication_classes = [TokenAuthentication]
+
+    def get(self, request, pk, format=None): 
+        qs = Chat.objects.get(pk=pk)
+        serializer = self.serializer_class(qs, many=False)
+        return Response(serializer.data)
+    
+    def put(self, request, pk, format=None):
+        chat = Chat.objects.get(pk=pk)
+        serializer = ChatSerializer(chat, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class MessageView(views.APIView):
     serializer_class = MessageSerializer
     authentication_classes = [TokenAuthentication]

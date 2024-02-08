@@ -4,15 +4,17 @@ import AxiosInstance from "./Axios";
 import { Box, Container, Divider, Button, Paper } from "@mui/material";
 import {useForm} from 'react-hook-form';
 import MyTextField from "./forms/MyTextField";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const Interact = () => {
     const { chatId } = useParams();
     const [myData, setMydata] = useState([])
     const [loading, setLoading] = useState(true)
+    const [newLoading, setNewLoading] = useState(false)
     const [inputValue, setInputValue] = useState(''); // For the input field
     const bottomRef = useRef(null);
     const GetData = () => {
-        AxiosInstance.get(`chatbot/chat/${chatId}/`, {
+        AxiosInstance.get(`chatbot/chat/messages/${chatId}/`, {
             headers: {
                 'Content-Type': 'application/json', 
                 'Authorization': 'token 0817b0aacc9a51627b9067e4d5b110c26caa20f6'
@@ -43,8 +45,9 @@ const Interact = () => {
     }
     const {handleSubmit, control, reset} = useForm({defaultValues:defaultValues})
     const submission = (data) => {
+        setNewLoading(true)
         console.log(data);
-        AxiosInstance.post(`chatbot/chat/${chatId}/`, {
+        AxiosInstance.post(`chatbot/chat/messages/${chatId}/`, {
             input: data.input,
         }, {
             headers: {
@@ -56,10 +59,10 @@ const Interact = () => {
             setMydata(prevMessages => [...prevMessages, res.data]);
             reset({ input: '' });
             console.log(res.data)
-            setLoading(false)
+            setNewLoading(false)
         }).catch((error) => {
             console.error("Error fetching data: ", error);
-            setLoading(false);
+            setNewLoading(false);
         });
     };
       
@@ -72,7 +75,7 @@ const Interact = () => {
                             {message.input}
                         </Box>
                         <Divider sx={{ my: 1 }} />
-                        <Box sx={{ bgcolor: 'blue', color: 'white', p: 2, wordBreak: 'break-word' }}>
+                        <Box sx={{ bgcolor: 'blue', color: 'white', p: 2, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                             {message.output}
                         </Box>
                     </Box>
@@ -90,8 +93,14 @@ const Interact = () => {
                     type="submit"
                     variant="contained"
                     sx={{ width: '20%' }}
+                    disabled={newLoading}
                 >
-                    Send
+                    {newLoading ? (
+                        <CircularProgress size={24} color="inherit" />
+                        ) : (
+                            "Send"
+                        )
+                    }
                 </Button>
             </Box>
         </Container>

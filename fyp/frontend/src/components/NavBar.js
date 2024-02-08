@@ -191,8 +191,8 @@ export default function MiniDrawer(props) {
                     px: 2.5,
                   }}
                   component={Link}
-                  to="/chatbot"
-                  selected={"/chatbot" === path}
+                  to="/chat"
+                  selected={"/chat" === path}
                 >
                 <ListItemIcon
                   sx={{
