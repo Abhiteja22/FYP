@@ -10,7 +10,6 @@ from datetime import timedelta
 import plotly
 import plotly.express as px
 import json
-import yfinance as yf
 from pmdarima import auto_arima
 
 
@@ -42,21 +41,6 @@ def get_risk_free_rate(time_period):
         return Decimal(latest_rate) / 100  # Convert percentage to decimal
     else:
         return None  # Or handle the error as appropriate
-
-def get_risk_free_rate_yf(time_period='3month'):
-    """Returns user's risk free rate based on time_period"""
-    if time_period == '3month':
-        ticker = '^IRX'
-    elif time_period == '2year':
-        ticker = 'IEI'
-    else:
-        ticker = '^TNX'
-
-    t_bill = yf.Ticker(ticker)
-    hist = t_bill.history(period="1d")
-    risk_free_rate = hist['Close'].iloc[-1]
- 
-    return risk_free_rate
 
 # Get Expected Market Return (symbol: market index to track)
 def get_expected_market_return(symbol, investment_time_period):

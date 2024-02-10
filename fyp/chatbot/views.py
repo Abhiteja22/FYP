@@ -62,9 +62,12 @@ class MessageView(views.APIView):
         chat = get_object_or_404(Chat, pk=pk)
         data = request.data.copy()
         data['chat'] = chat.pk
+        user = request.user
+        output = chatbot(data['input'], user)
+        data['output'] = output
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
-            serializer.save(chat=chat)
+            serializer.save(chat=chat, output=output)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

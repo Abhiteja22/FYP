@@ -7,6 +7,7 @@ from langchain_community.tools.convert_to_openai import format_tool_to_openai_fu
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.agents import AgentExecutor
+from app.views import create_portfolio_openAI, add_to_portfolio, get_portfolios, edit_portfolio_name
 import numpy as np
 
 NOT_AVAILABLE_CONSTANT = 'Not Available'
@@ -81,7 +82,7 @@ def get_portfolio_stddev(portfolio_assets):
     portfolio_standard_deviation = np.sqrt(np.dot(np.dot(portfolio, covariance), portfolio.T))
     return portfolio_standard_deviation
 
-def get_portfolio_details(ticker_symbols):
+def calculate_portfolio_details(ticker_symbols):
     """Returns various details of the portfolio taking a dictionary of key: asset ticker symbols and value: quantity"""
     risk_free_rate = get_user_risk_free_rate()
     portfolio_details = {}
@@ -139,19 +140,26 @@ def get_asset_details(ticker):
     }
     return return_dict
 
-def chatbot(input):
+# TODO: Only allow logged in user to create portfolios
+def chatbot(input, user):
     # Tools
     search = SerpAPIWrapper(serpapi_api_key="f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7")
     serp_api_tool = StructuredTool.from_function(search.run)
     get_asset_details_tool = StructuredTool.from_function(get_asset_details)
-    get_portfolio_details_tool = StructuredTool.from_function(get_portfolio_details)
-    tools = [serp_api_tool, get_asset_details_tool, get_portfolio_details_tool]
+    calculate_portfolio_details_tool = StructuredTool.from_function(calculate_portfolio_details)
+    get_portfolios_tool = StructuredTool.from_function(get_portfolios)
+    create_portfolio_tool = StructuredTool.from_function(create_portfolio_openAI)
+    # get_portfolio_details_tool = StructuredTool.from_function(create_portfolio_openAI)
+    add_to_portfolio_tool = StructuredTool.from_function(add_to_portfolio)
+    edit_portfolio_name_tool = StructuredTool.from_function(edit_portfolio_name)
+    # delete_portfolio_tool = StructuredTool.from_function(create_portfolio_openAI)
+    tools = [serp_api_tool, get_asset_details_tool, calculate_portfolio_details_tool, create_portfolio_tool, get_portfolios_tool, edit_portfolio_name_tool, add_to_portfolio_tool]
 
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                "You are very powerful assistant specialising in financial information given a stock name/ticker. You must give information about all the information of the stock/portfolio and the user",
+                "You are very powerful assistant specialising in financial information given a stock name/ticker. You must give information about all the information of the stock/portfolio and the {user}. You must also help {user} to create a portfolio taking the required name of the portfolio as input. Username is always {user}",
             ),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -162,6 +170,7 @@ def chatbot(input):
     agent = (
         {
             "input": lambda x: x["input"],
+            "user": lambda x: x["user"],
             "agent_scratchpad": lambda x: format_to_openai_function_messages(
                 x["intermediate_steps"]
             ),
@@ -171,8 +180,8 @@ def chatbot(input):
         | OpenAIFunctionsAgentOutputParser()
     )
 
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
 
-    response = agent_executor.invoke({"input":input})["output"]
+    response = agent_executor.invoke({"input":input, "user": user})["output"]
     print(response)
     return response

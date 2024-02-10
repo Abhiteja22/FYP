@@ -8,7 +8,7 @@ class AssetAdmin(admin.ModelAdmin):
     list_display = ("ticker", "name", "country", "type", "exchange", "ipoDate", "delistingDate", "status")
 
 class PortfolioAdmin(admin.ModelAdmin):
-    list_display = ("name", "alpha", "beta","creation_date")
+    list_display = ("name", "alpha", "beta","creation_date", "user")
 
 class PortfolioAssetAdmin(admin.ModelAdmin):
     list_display = ("portfolio", "asset_ticker", "quantity",)  

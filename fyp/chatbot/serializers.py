@@ -48,10 +48,3 @@ class MessageSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "output": {"read_only": True}
         }
-    
-    def create(self, validated_data):
-        message = Message(**validated_data)
-        output = chatbot(validated_data["input"])
-        message.output = output
-        message.save()
-        return message

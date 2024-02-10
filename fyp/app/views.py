@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.forms import modelformset_factory
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions
@@ -95,6 +96,89 @@ def portfolio_create(request):
         form = PortfolioForm()
         formset = PortfolioAssetFormSet(queryset=PortfolioAsset.objects.none())
     return render(request, 'portfolio/portfolio_form.html', {'form': form, 'formset': formset})
+
+def get_user_by_username(username):
+    try:
+        user = User.objects.get(username=username)
+        return user
+    except User.DoesNotExist:
+        return None
+
+def create_portfolio_openAI(username, portfolio_name, assets):
+    """
+    Creates a portfolio and its associated assets.
+
+    :param username: The username to whom the portfolio belongs.
+    :param portfolio_name: The name of the portfolio.
+    :param assets: A list of tuples where each tuple contains the asset ticker (as a string) and quantity.
+                   For example: [('AAPL', 10), ('MSFT', 15)]
+    :return: The created portfolio instance.
+    """
+    # Assume Portfolio and PortfolioAsset are imported from models
+    user = get_user_by_username(username)
+    with transaction.atomic():
+        # Create and save the portfolio instance
+        portfolio = Portfolio(name=portfolio_name, user=user)
+        portfolio.save()
+
+        # Iterate over the assets and create PortfolioAsset instances
+        for asset_ticker, quantity in assets:
+            # Assuming Asset model has a 'ticker' field to uniquely identify assets
+            portfolio_asset = PortfolioAsset(portfolio=portfolio, asset_ticker=asset_ticker, quantity=quantity)
+            portfolio_asset.save()
+
+    return portfolio
+
+def add_to_portfolio(username, portfolio_name, assets):
+    """
+    Adds assets to an existing portfolio for a specific user.
+
+    :param username: The username to whom the portfolio belongs.
+    :param portfolio_name: The name of the portfolio where assets will be added.
+    :param assets: A list of tuples where each tuple contains the asset ticker (as a string) and quantity.
+                   For example: [('GOOG', 5), ('AMZN', 2)]
+    """
+    user = get_user_by_username(username)
+    with transaction.atomic():
+        portfolio = Portfolio.objects.get(name=portfolio_name, user=user)
+        
+        for asset_ticker, quantity in assets:
+            portfolio_asset = PortfolioAsset(
+                portfolio=portfolio,
+                asset_ticker=asset_ticker,
+                quantity=quantity
+            )
+            portfolio_asset.save()
+
+    return portfolio
+
+def edit_portfolio_name(username, old_portfolio_name, new_portfolio_name):
+    """
+    Adds assets to an existing portfolio for a specific user.
+
+    :param username: The username to whom the portfolio belongs.
+    :param old_portfolio_name: The old name of the portfolio.
+    :param new_portfolio_name: The new name of the portfolio to be updated to.
+    """
+    user = get_user_by_username(username)
+    with transaction.atomic():
+        portfolio = Portfolio.objects.get(name=old_portfolio_name, user=user)
+        print(old_portfolio_name)
+        portfolio.name = new_portfolio_name
+        portfolio.save()
+
+    return portfolio
+
+def get_portfolios(username):
+    """
+    Retrieves user's list of portfolios
+
+    :param username: The username to whom the portfolio belongs.
+    """
+    user = get_user_by_username(username)
+    portfolio = Portfolio.objects.filter(user=user)
+
+    return portfolio
 
 # TODO: Update portfolio update page
 @login_required 
