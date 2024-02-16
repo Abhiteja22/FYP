@@ -152,6 +152,37 @@ def add_to_portfolio(username, portfolio_name, assets):
 
     return portfolio
 
+# TODO: Create logic to add to historical portfolio assets
+def remove_from_portfolio(username, portfolio_name, assets):
+    """
+    Removes assets from an existing portfolio for a specific user.
+
+    :param username: The username to whom the portfolio belongs.
+    :param portfolio_name: The name of the portfolio from which assets will be removed.
+    :param assets: A list of tuples where each tuple contains the asset ticker (as a string) and quantity to be removed.
+                   For example: [('GOOG', 3), ('AMZN', 1)]
+    """
+    user = get_user_by_username(username)
+    with transaction.atomic():
+        # Retrieve the specified portfolio
+        portfolio = Portfolio.objects.get(name=portfolio_name, user=user)
+        
+        for asset_ticker, quantity_to_remove in assets:
+            try:
+                # Retrieve the existing PortfolioAsset instance
+                portfolio_asset = PortfolioAsset.objects.get(portfolio=portfolio, asset_ticker=asset_ticker)
+                
+                if portfolio_asset.quantity > quantity_to_remove:
+                    # Reduce the quantity of the asset
+                    portfolio_asset.quantity -= quantity_to_remove
+                    portfolio_asset.save()
+                else:
+                    # If the removal quantity equals or exceeds the current quantity, delete the asset from the portfolio
+                    portfolio_asset.delete()
+            except PortfolioAsset.DoesNotExist:
+                # Handle the case where the specified asset does not exist in the portfolio
+                print(f"Asset {asset_ticker} not found in portfolio {portfolio_name}.")
+
 def edit_portfolio_name(username, old_portfolio_name, new_portfolio_name):
     """
     Adds assets to an existing portfolio for a specific user.
@@ -179,6 +210,17 @@ def get_portfolios(username):
     portfolio = Portfolio.objects.filter(user=user)
 
     return portfolio
+
+def delete_portfolio(username, portfolio_name):
+    """
+    Deletes a specific portfolio belonging to a user.
+
+    :param username: The username of the user.
+    :param portfolio_name: The name of the portfolio to be deleted.
+    """
+    user = get_user_by_username(username)
+    # Attempt to delete the specified portfolio
+    Portfolio.objects.filter(user=user, name=portfolio_name).delete()
 
 # TODO: Update portfolio update page
 @login_required 

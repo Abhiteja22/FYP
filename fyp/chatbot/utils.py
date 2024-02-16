@@ -7,7 +7,11 @@ from langchain_community.tools.convert_to_openai import format_tool_to_openai_fu
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.agents import AgentExecutor
-from app.views import create_portfolio_openAI, add_to_portfolio, get_portfolios, edit_portfolio_name
+from langchain.prompts import PromptTemplate
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import LLMChain, SequentialChain
+from langchain.memory import SimpleMemory
+from app.views import create_portfolio_openAI, add_to_portfolio, get_portfolios, edit_portfolio_name, delete_portfolio, remove_from_portfolio
 import numpy as np
 
 NOT_AVAILABLE_CONSTANT = 'Not Available'
@@ -149,17 +153,23 @@ def chatbot(input, user):
     calculate_portfolio_details_tool = StructuredTool.from_function(calculate_portfolio_details)
     get_portfolios_tool = StructuredTool.from_function(get_portfolios)
     create_portfolio_tool = StructuredTool.from_function(create_portfolio_openAI)
-    # get_portfolio_details_tool = StructuredTool.from_function(create_portfolio_openAI)
     add_to_portfolio_tool = StructuredTool.from_function(add_to_portfolio)
     edit_portfolio_name_tool = StructuredTool.from_function(edit_portfolio_name)
-    # delete_portfolio_tool = StructuredTool.from_function(create_portfolio_openAI)
-    tools = [serp_api_tool, get_asset_details_tool, calculate_portfolio_details_tool, create_portfolio_tool, get_portfolios_tool, edit_portfolio_name_tool, add_to_portfolio_tool]
+    delete_portfolio_tool = StructuredTool.from_function(delete_portfolio)
+    remove_from_portfolio_tool = StructuredTool.from_function(remove_from_portfolio)
+    tools = [serp_api_tool, get_asset_details_tool, calculate_portfolio_details_tool, create_portfolio_tool, get_portfolios_tool, edit_portfolio_name_tool, add_to_portfolio_tool, delete_portfolio_tool, remove_from_portfolio_tool]
 
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                "You are very powerful assistant specialising in financial information given a stock name/ticker. You must give information about all the information of the stock/portfolio and the {user}. You must also help {user} to create a portfolio taking the required name of the portfolio as input. Username is always {user}",
+                """
+                You are very powerful assistant specialising in financial information.
+                First of all, you should always find out what is the stock ticker symbol given a stock/asset name and use this as an input to all tools.
+                You must give information about all the information of the stock/portfolio and the {user} including the financial risk metrics and also the industry and brief introduction of the company. 
+                You must help {user} to create a portfolio taking the required name of the portfolio as input. 
+                Username is always {user}.
+                """,
             ),
             ("user", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -181,7 +191,21 @@ def chatbot(input, user):
     )
 
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
+    # CHAIN ONE: GETTING STOCK TICKER SYMBOL
+    # template = """You are a financial assistant specialising in differentiating stock ticker symbols and names.
+    # Given a stock's name, it is your job to retrieve the stock's ticker symbol.
+    
+    # Stock:
+    # {input}
+    # Ticker Symbol:"""
+    # prompt_template = PromptTemplate(input_variables=["stock"], template=template)
+    # chain_one = LLMChain(llm=llm,prompt=prompt_template)
+
+    # chain_two = agent
+
+    # overall_chain = SequentialChain(chains=[chain_one, chain_two], verbose=True, input_variables=["input"], memory=SimpleMemory(memories={"user": user}))
 
     response = agent_executor.invoke({"input":input, "user": user})["output"]
+    # response = overall_chain.invoke({"input": input})["output"]
     print(response)
     return response
