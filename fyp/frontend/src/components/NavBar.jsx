@@ -21,11 +21,16 @@ import MailIcon from '@mui/icons-material/Mail';
 import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
 import AssistantIcon from '@mui/icons-material/Assistant';
+import Avatar from '@mui/material/Avatar';
+import CardTravelIcon from '@mui/icons-material/CardTravel';
+import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import {Link, useLocation} from 'react-router-dom';
 
 const drawerWidth = 240;
 
 const openedMixin = (theme) => ({
+  
   width: drawerWidth,
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
@@ -35,6 +40,7 @@ const openedMixin = (theme) => ({
 });
 
 const closedMixin = (theme) => ({
+  
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -49,8 +55,8 @@ const closedMixin = (theme) => ({
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'flex-end',
-  padding: theme.spacing(0, 1),
+  justifyContent: 'space-between',
+  padding: theme.spacing(0, 2),
   // necessary for content to be below app bar
   ...theme.mixins.toolbar,
 }));
@@ -58,6 +64,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })(({ theme, open }) => ({
+  
   zIndex: theme.zIndex.drawer + 1,
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
@@ -107,8 +114,7 @@ export default function MiniDrawer(props) {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar position="fixed" open={open}>
+      <AppBar position="fixed" open={open} theme={theme}>
         <Toolbar>
           <IconButton
             color="inherit"
@@ -122,15 +128,17 @@ export default function MiniDrawer(props) {
           >
             <MenuIcon />
           </IconButton>
+          <Avatar variant="square" alt="Riment" src="src/static/images/logo.png" sx={{ marginRight: 1 }} />
           <Typography variant="h6" noWrap component="div">
-            Mini variant drawer
+            Riment
           </Typography>
         </Toolbar>
       </AppBar>
       <Drawer variant="permanent" open={open}>
         <DrawerHeader>
+          <Avatar variant="square" alt="Riment" src="src/static/images/logo.png" />
           <IconButton onClick={handleDrawerClose}>
-            {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            {theme.direction === 'rtl' ? <ChevronRightIcon/> : <ChevronLeftIcon/>}
           </IconButton>
         </DrawerHeader>
         <List>
@@ -160,7 +168,7 @@ export default function MiniDrawer(props) {
         </List>
         <Divider />
         <List>
-          <ListItem key={'Create Portfolios'} disablePadding sx={{ display: 'block' }}>
+          <ListItem key={'View Portfolios'} disablePadding sx={{ display: 'block' }}>
               <ListItemButton
                   sx={{
                     minHeight: 48,
@@ -168,8 +176,8 @@ export default function MiniDrawer(props) {
                     px: 2.5,
                   }}
                   component={Link}
-                  to="/create"
-                  selected={"/create" === path}
+                  to="/"
+                  selected={"/" === path}
                 >
                 <ListItemIcon
                   sx={{
@@ -178,9 +186,9 @@ export default function MiniDrawer(props) {
                     justifyContent: 'center',
                   }}
                 >
-                <AddIcon/>
+                <CardTravelIcon/>
                 </ListItemIcon>
-                <ListItemText primary={'Create Portfolios'} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText primary={'View Portfolios'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
             </ListItem>
             <ListItem key={'Chatbot'} disablePadding sx={{ display: 'block' }}>
@@ -206,15 +214,18 @@ export default function MiniDrawer(props) {
                 <ListItemText primary={'Chatbot'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
             </ListItem>
-          {['View Portfolios', 'Suggest portfolios'].map((text, index) => (
-            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
+            
+            <ListItem key={'Suggest portfolios'} disablePadding sx={{ display: 'block' }}>
               <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? 'initial' : 'center',
-                  px: 2.5,
-                }}
-              >
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                  }}
+                  component={Link}
+                  to="/"
+                  selected={"/" === path}
+                >
                 <ListItemIcon
                   sx={{
                     minWidth: 0,
@@ -222,24 +233,25 @@ export default function MiniDrawer(props) {
                     justifyContent: 'center',
                   }}
                 >
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                <TipsAndUpdatesIcon/>
                 </ListItemIcon>
-                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText primary={'Suggest portfolios'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
             </ListItem>
-          ))}
         </List>
         <Divider />
         <List>
-          {['View Assets', 'View Profile'].map((text, index) => (
-            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
+          <ListItem key={'View Assets'} disablePadding sx={{ display: 'block' }}>
               <ListItemButton
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? 'initial' : 'center',
-                  px: 2.5,
-                }}
-              >
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                  }}
+                  component={Link}
+                  to="/"
+                  selected={"/" === path}
+                >
                 <ListItemIcon
                   sx={{
                     minWidth: 0,
@@ -247,15 +259,40 @@ export default function MiniDrawer(props) {
                     justifyContent: 'center',
                   }}
                 >
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                <TipsAndUpdatesIcon/>
                 </ListItemIcon>
-                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText primary={'View Assets'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
             </ListItem>
-          ))}
+        </List>
+        <Divider />
+        <List sx={{ position: 'absolute', bottom: 0, width: '100%', textAlign: 'center', pb: 2 }}>
+        <ListItem key={'My Profile'} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                  }}
+                  component={Link}
+                  to="/"
+                  selected={"/" === path}
+                >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 3 : 'auto',
+                    justifyContent: 'center',
+                  }}
+                >
+                <Avatar sx={{ mx: 'auto' }} alt="Username" src="/path/to/user/avatar.jpg" />
+                </ListItemIcon>
+                <ListItemText primary={'My Profile'} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
         </List>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, width: '100%', minHeight: '100vh', boxSizing: 'border-box', }}>
         <DrawerHeader />
         {content}
       </Box>

@@ -1,4 +1,5 @@
 import './App.css';
+import { createTheme, colors, ThemeProvider, CssBaseline } from '@mui/material';
 import {Routes, Route} from 'react-router-dom';
 import Home from './components/Home';
 import About from './components/About';
@@ -11,9 +12,48 @@ import Chat from './components/Chat';
 import Interact from './components/Interact';
 import CreateChat from './components/CreateChat';
 import EditChat from './components/EditChat';
+import { Palette } from '@mui/icons-material';
+
+const getDesignTokens = (mode) => ({
+  palette: {
+    mode,
+    ...(mode === 'light'
+      ? {
+          // Light mode palette
+          background: {
+            default: '#f5f5ff',
+          },
+          primary: {
+            main: '#104ec1',
+          },
+          secondary: {
+            main: '#8b98e9',
+            light: '#a2aced'
+          },
+        }
+      : {
+          // Dark mode palette
+          background: {
+            default: '#00000e',
+          },
+          primary: {
+            main: '#3e7cef',
+          },
+          secondary: {
+            main: '#162374',
+            dark: '#0f1851'
+          },
+        }),
+  },
+});
+
+// Create a theme instance based on the preferred mode
+const theme = createTheme(getDesignTokens('dark'));
 
 function App() {
   return (
+    <ThemeProvider theme={theme}>
+    <CssBaseline />
     <div className='App'>
       <MiniDrawer 
         content = {
@@ -32,6 +72,7 @@ function App() {
         }
       />
     </div>
+    </ThemeProvider>
   );
 }
 

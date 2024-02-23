@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import {React, useEffect, useState, useRef} from "react";
 import AxiosInstance from "./Axios";
-import { Box, Container, Divider, Button, Paper } from "@mui/material";
+import { Box, Container, Divider, Button, Paper, useTheme, Avatar, Typography } from "@mui/material";
 import {useForm} from 'react-hook-form';
 import MyTextField from "./forms/MyTextField";
 import CircularProgress from '@mui/material/CircularProgress';
@@ -65,23 +65,34 @@ const Interact = () => {
             setNewLoading(false);
         });
     };
+    const theme = useTheme();
+    const backgroundColor = theme.palette.mode === 'dark' ? theme.palette.secondary.dark : theme.palette.secondary.light;
       
     return (
-        <Container maxWidth="md" sx={{ mt: 4, position: 'relative', height: 'calc(100vh - 48px)', display: 'flex', flexDirection: 'column' }}>
-            <Paper elevation={3} sx={{ p: 2, overflow: 'auto', flexGrow: 1, mb: 2 }}>
+        <Container maxWidth="lg" sx={{ mt: 4, position: 'relative', height: 'calc(100vh - 48px)', display: 'flex', flexDirection: 'column', bgcolor: backgroundColor }}>
+            <Paper elevation={3} sx={{ p: 2, overflow: 'auto', flexGrow: 1, mb: 2, bgcolor: 'transparent' }}>
                 {loading ? <p>Loading data...</p> : myData.map((message, index) => (
                     <Box key={index} sx={{ '&:not(:last-child)': { mb: 2 } }} ref={index === myData.length - 1 ? bottomRef : null}>
-                        <Box sx={{ bgcolor: 'purple', color: 'white', p: 2, wordBreak: 'break-word' }}>
+                        <Box sx={{ color: 'white', p: 2, wordBreak: 'break-word' }}>
+                            <Box sx={{ display: 'flex', mb: 1 }}>
+                                <Avatar sx={{ mr: 1, width: 24, height: 24 }}>U</Avatar>
+                                <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', mr: 1 }}>Username</Typography>
+                            </Box>
                             {message.input}
                         </Box>
                         <Divider sx={{ my: 1 }} />
-                        <Box sx={{ bgcolor: 'blue', color: 'white', p: 2, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                        <Box sx={{ color: 'white', p: 2, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                            <Box sx={{ display: 'flex', mb: 1 }}>
+                                <Avatar variant="square" alt="Riment" src="src/static/images/logo.png" sx={{ mr: 1, width: 24, height: 24 }} />
+                                <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', mr: 1 }}>Riment</Typography>
+                            </Box>
                             {message.output}
                         </Box>
+                        <Divider sx={{ my: 1 }} />
                     </Box>
                 ))}
             </Paper>
-            <Box component="form" noValidate onSubmit={handleSubmit(submission)} sx={{ display: 'flex', position: 'sticky', bottom: 0, pb: 2, pt: 1, bgcolor: 'background.paper' }}>
+            <Box component="form" noValidate onSubmit={handleSubmit(submission)} sx={{ display: 'flex', position: 'sticky', bottom: 0, pb: 2, pt: 1, bgcolor: backgroundColor }}>
                 <MyTextField
                     name="input"
                     control={control}

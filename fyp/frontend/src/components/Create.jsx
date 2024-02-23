@@ -29,9 +29,9 @@ const Create = () => {
     return (
         <div>
             <form onSubmit={handleSubmit(submission)}>
-            <Box sx={{display:'flex', width:'100%', backgroundColor:'#00003f', marginBottom:'10px'}}>
-                <Typography sx={{marginLeft:'20px', color:'#fff'}}>
-                    Create Portfolio
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                <Typography variant="h4" component="h2">
+                    Create New Portfolio
                 </Typography>
             </Box>
 
