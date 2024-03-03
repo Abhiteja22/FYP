@@ -13,10 +13,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions
 from .serializers import *
-from .models import Asset, PortfolioAsset, Portfolio, Profile
+from .models import Asset, PortfolioAsset, Portfolio, Profile, CustomUser
 from .forms import AddToPortfolioForm, PortfolioAssetForm, UserRegisterForm, ProfileForm, PortfolioForm
 from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_maximum_drawdown, get_risk_free_rate, get_simple_moving_average, get_sortino_ratio
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 # Create your views here.
 
 def index(request):
@@ -384,6 +386,19 @@ class AssetView(viewsets.ViewSet):
         asset = self.queryset.get(pk=pk)
         asset.delete()
         return Response(status=204)
+    
+class RegisterViewset(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
     
 class PortfolioView(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]

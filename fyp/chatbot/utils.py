@@ -1,18 +1,25 @@
+import os
 from langchain.tools import StructuredTool
-from langchain.chat_models import ChatOpenAI
-from langchain.utilities import SerpAPIWrapper
+from langchain_community.chat_models import ChatOpenAI
+from langchain_community.utilities import SerpAPIWrapper
 import yfinance as yf
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
-from langchain.agents import AgentExecutor
+from langchain.agents import AgentExecutor, load_tools
 from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import LLMChain, SequentialChain
 from langchain.memory import SimpleMemory
+from langchain_community.tools.google_finance import GoogleFinanceQueryRun
+from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 from app.views import create_portfolio_openAI, add_to_portfolio, get_portfolios, edit_portfolio_name, delete_portfolio, remove_from_portfolio
 import numpy as np
+from pypfopt.expected_returns import mean_historical_return
+from pypfopt.risk_models import CovarianceShrinkage
+from pypfopt.efficient_frontier import EfficientFrontier
+from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 
 NOT_AVAILABLE_CONSTANT = 'Not Available'
 
@@ -144,10 +151,49 @@ def get_asset_details(ticker):
     }
     return return_dict
 
+def suggest_portfolio(tickers):
+    """
+    Returns weights, allocation and performance of a portfolio with a budget of $10000
+    :param tickers: List of ticker symbols of stocks to include in the portfolio
+    :return: A dictionary of information of the portfolio with keys and their description:
+    weights: Ordered dictionary of weights of each stocks
+    performance: a set of three floats with description (Expected annual return, Annual volatility, Sharpe Ratio)
+    allocation: Dictionary of number of stocks to purchase for each asset
+    leftover_cash: Leftover sum of cash after allocation of stock
+    """
+    data = yf.download(
+        tickers = tickers,
+        start = '2020-01-01',
+        end = '2024-1-1'
+    )
+    prices = data['Adj Close']
+    
+    mu = mean_historical_return(prices)
+    S = CovarianceShrinkage(prices).ledoit_wolf()
+    ef = EfficientFrontier(mu, S)
+    weights = ef.max_sharpe()
+    cleaned_weights = ef.clean_weights()
+    performance = ef.portfolio_performance()
+    latest_prices = get_latest_prices(prices)
+
+    da = DiscreteAllocation(weights, latest_prices, total_portfolio_value=10000)
+
+    allocation, leftover = da.greedy_portfolio()
+    
+    return_dict = {
+        'weights': cleaned_weights,
+        'performance': performance,
+        'allocation': allocation,
+        'leftover_cash': leftover,
+    }
+
+    return return_dict
+
 # TODO: Only allow logged in user to create portfolios
 def chatbot(input, user):
     # Tools
     search = SerpAPIWrapper(serpapi_api_key="f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7")
+    google_finance_tool = GoogleFinanceQueryRun(api_wrapper=GoogleFinanceAPIWrapper(serp_api_key='f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7'))
     serp_api_tool = StructuredTool.from_function(search.run)
     get_asset_details_tool = StructuredTool.from_function(get_asset_details)
     calculate_portfolio_details_tool = StructuredTool.from_function(calculate_portfolio_details)
@@ -157,7 +203,9 @@ def chatbot(input, user):
     edit_portfolio_name_tool = StructuredTool.from_function(edit_portfolio_name)
     delete_portfolio_tool = StructuredTool.from_function(delete_portfolio)
     remove_from_portfolio_tool = StructuredTool.from_function(remove_from_portfolio)
-    tools = [serp_api_tool, get_asset_details_tool, calculate_portfolio_details_tool, create_portfolio_tool, get_portfolios_tool, edit_portfolio_name_tool, add_to_portfolio_tool, delete_portfolio_tool, remove_from_portfolio_tool]
+    suggest_portfolio_tool = StructuredTool.from_function(suggest_portfolio)
+    
+    tools = [serp_api_tool, get_asset_details_tool, calculate_portfolio_details_tool, create_portfolio_tool, get_portfolios_tool, edit_portfolio_name_tool, add_to_portfolio_tool, delete_portfolio_tool, remove_from_portfolio_tool, suggest_portfolio_tool, google_finance_tool]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -191,21 +239,17 @@ def chatbot(input, user):
     )
 
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
-    # CHAIN ONE: GETTING STOCK TICKER SYMBOL
-    # template = """You are a financial assistant specialising in differentiating stock ticker symbols and names.
-    # Given a stock's name, it is your job to retrieve the stock's ticker symbol.
-    
-    # Stock:
-    # {input}
-    # Ticker Symbol:"""
-    # prompt_template = PromptTemplate(input_variables=["stock"], template=template)
+    # CHAIN ONE: Getting what stocks to invest in
+    # template = """You are a financial assistant specialising in suggesting a portfolio of stocks to invest in such that they are well diversified based on their industries.
+    # You are required to suggest a list of stocks (number of stocks to be defined by the user's input). If not defined, suggest a portfolio of minimum 5 stocks. Input: {input}"""
+    # prompt_template = PromptTemplate(input_variables=["input"], template=template)
     # chain_one = LLMChain(llm=llm,prompt=prompt_template)
 
     # chain_two = agent
 
-    # overall_chain = SequentialChain(chains=[chain_one, chain_two], verbose=True, input_variables=["input"], memory=SimpleMemory(memories={"user": user}))
+    # overall_chain = SequentialChain(chains=[chain_one, chain_two], input_variables=["input"], verbose=True, memory=SimpleMemory(memories={"user": user}))
 
     response = agent_executor.invoke({"input":input, "user": user})["output"]
     # response = overall_chain.invoke({"input": input})["output"]
-    print(response)
+    
     return response

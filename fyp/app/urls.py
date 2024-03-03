@@ -3,6 +3,7 @@ from . import views
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
+router.register('register', views.RegisterViewset, basename='register')
 router.register('assets', views.AssetView, basename='assets')
 router.register('portfolio', views.PortfolioView, basename='portfolio')
 router.register('portfolioAsset', views.PortfolioAssetView, basename='portfolioAsset')

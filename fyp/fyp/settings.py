@@ -59,6 +59,8 @@ CORS_ALLOWED_ORIGINS = [
     # Add other origins as needed
 ]
 
+AUTH_USER_MODEL = 'app.CustomUser'
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',

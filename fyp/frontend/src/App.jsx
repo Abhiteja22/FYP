@@ -1,6 +1,6 @@
 import './App.css';
 import { createTheme, colors, ThemeProvider, CssBaseline } from '@mui/material';
-import {Routes, Route} from 'react-router-dom';
+import {Routes, Route, useLocation} from 'react-router-dom';
 import Home from './components/Home';
 import About from './components/About';
 import Create from './components/Create';
@@ -12,6 +12,8 @@ import Chat from './components/Chat';
 import Interact from './components/Interact';
 import CreateChat from './components/CreateChat';
 import EditChat from './components/EditChat';
+import Login from './components/Login';
+import Register from './components/Register';
 import { Palette } from '@mui/icons-material';
 
 const getDesignTokens = (mode) => ({
@@ -51,14 +53,23 @@ const getDesignTokens = (mode) => ({
 const theme = createTheme(getDesignTokens('dark'));
 
 function App() {
+  const location = useLocation()
+  const noNavBar = location.pathname === "/register" || location.pathname === "/"
   return (
     <ThemeProvider theme={theme}>
     <CssBaseline />
     <div className='App'>
-      <MiniDrawer 
+      {
+        noNavBar ?
+        <Routes>
+          <Route path='/' element={<Login/>}/>
+          <Route path='/register' element={<Register/>}/>
+        </Routes>
+        :
+        <MiniDrawer 
         content = {
           <Routes>
-            <Route path='' element={<Home/>}/>
+            <Route path='/home' element={<Home/>}/>
             <Route path='/about' element={<About/>}/>
             <Route path='/create' element={<Create/>}/>
             <Route path='/edit/:id' element={<Edit/>}/>
@@ -71,6 +82,8 @@ function App() {
           </Routes>
         }
       />
+      }
+      
     </div>
     </ThemeProvider>
   );

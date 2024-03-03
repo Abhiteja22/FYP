@@ -40,3 +40,30 @@
 .read-the-docs {
   color: #888;
 } */
+
+.myBackground {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(40,40,40);
+  background: linear-gradient(180deg, rgba(40,40,40,1) 0%, rgba(53,0,211,1) 59%, rgba(36,0,144,1) 100%);
+}
+
+.whiteBox {
+  background-color: transparent;
+  padding: 20px;
+  min-width: 300px;
+  height: 70%;
+  width: 25%;
+}
+
+.itemBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  background-color: transparent;
+  height: 100px;
+}

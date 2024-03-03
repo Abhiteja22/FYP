@@ -1,8 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+class CustomUser(AbstractUser):
+    email = models.EmailField(max_length=200, unique=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+    
 # TODO: Remove risk_free_rate and expected_market_return and adjust how data is to be shown
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
