@@ -3,7 +3,7 @@ import {React, useEffect} from "react";
 import { Box, Typography, Button } from "@mui/material";
 import MyTextField from "./forms/MyTextField";
 import {useForm} from 'react-hook-form';
-import AxiosInstance from "./Axios";
+import AxiosInstance from '../utils/Axios';
 import { useNavigate, useParams } from "react-router-dom";
 
 const EditChat = () => {

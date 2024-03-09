@@ -1,25 +1,24 @@
-import json
-import requests
+import requests, json
 from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.forms import modelformset_factory
 from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, authentication, generics, status
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
 from .serializers import *
-from .models import Asset, PortfolioAsset, Portfolio, Profile, CustomUser
+from .models import Asset, PortfolioAsset, Portfolio, Profile
 from .forms import AddToPortfolioForm, PortfolioAssetForm, UserRegisterForm, ProfileForm, PortfolioForm
 from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_maximum_drawdown, get_risk_free_rate, get_simple_moving_average, get_sortino_ratio
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-# Create your views here.
 
 def index(request):
     template = loader.get_template("index.html")
@@ -347,9 +346,47 @@ def show_chart(request, symbol):
     context = {'chart': chart, 'ARIMA': predicted_prices_chart}
     return render(request, 'asset/asset_dashboard.html', context)
 
-class AssetView(viewsets.ViewSet):
+@api_view(['GET'])
+def getRoutes(request):
+    routes = [
+        '/api/token/',
+        '/api/register/',
+        '/api/token/refresh/',
+        '/api/test/'
+    ]
+    return Response(routes)
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def testEndPoint(request):
+    if request.method == 'GET':
+        data = f"Congratulation {request.user}, your API just responded to GET request"
+        return Response({'response': data}, status=status.HTTP_200_OK)
+    elif request.method == 'POST':
+        try:
+            body = request.body.decode('utf-8')
+            data = json.loads(body)
+            if 'text' not in data:
+                return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
+            text = data.get('text')
+            data = f'Congratulation your API just responded to POST request with text: {text}'
+            return Response({'response': data}, status=status.HTTP_200_OK)
+        except json.JSONDecodeError:
+            return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
+    return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
+    
+# class based view to register user
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
+    serializer_class = RegisterSerializer
+        
+class AssetView(viewsets.ViewSet):
     queryset = Asset.objects.all()
+    permission_classes = [permissions.AllowAny]
     serializer_class = AssetSerializer
 
     def list(self, request):
@@ -387,19 +424,6 @@ class AssetView(viewsets.ViewSet):
         asset.delete()
         return Response(status=204)
     
-class RegisterViewset(viewsets.ViewSet):
-    permission_classes = [permissions.AllowAny]
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-
-    def create(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=400)
-    
 class PortfolioView(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
     queryset = Portfolio.objects.all()
@@ -420,7 +444,7 @@ class PortfolioView(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):
         portfolio = self.queryset.get(pk=pk)
-        serializer = self.serializer_class(portfolio)
+        serializer = self.serializer_class(portfolio, context={'request': request})
         return Response(serializer.data)
 
     def update(self, request, pk=None):

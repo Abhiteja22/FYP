@@ -4,15 +4,16 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-class CustomUser(AbstractUser):
-    email = models.EmailField(max_length=200, unique=True)
+# class CustomUser(AbstractUser):
+#     email = models.EmailField(max_length=200, unique=True)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+#     USERNAME_FIELD = 'email'
+#     REQUIRED_FIELDS = []
     
 # TODO: Remove risk_free_rate and expected_market_return and adjust how data is to be shown
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     risk_aversion = models.DecimalField(max_digits=5, decimal_places=2, null=True)
     investment_time_period = models.CharField(max_length=20, null=True)
     risk_free_rate = models.DecimalField(max_digits=7, decimal_places=5, null=True, blank=True, help_text="Annual risk-free rate of return")
@@ -28,7 +29,7 @@ class Profile(models.Model):
     
 class Portfolio(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=50)
     alpha = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     beta = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     creation_date = models.DateField(auto_now_add=True)

@@ -1,10 +1,11 @@
 import { useParams } from 'react-router-dom';
 import {React, useEffect, useState, useRef} from "react";
-import AxiosInstance from "./Axios";
-import { Box, Container, Divider, Button, Paper, useTheme, Avatar, Typography } from "@mui/material";
+import AxiosInstance from '../utils/Axios';
+import { Box, Container, Divider, Button, Paper, useTheme, Avatar, Typography, CssBaseline } from "@mui/material";
 import {useForm} from 'react-hook-form';
 import MyTextField from "./forms/MyTextField";
 import CircularProgress from '@mui/material/CircularProgress';
+import Markdown from 'react-markdown';
 
 const Interact = () => {
     const { chatId } = useParams();
@@ -81,12 +82,14 @@ const Interact = () => {
                             {message.input}
                         </Box>
                         <Divider sx={{ my: 1 }} />
-                        <Box sx={{ color: 'white', p: 2, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                        <Box sx={{ color: 'white', p: 2, wordBreak: 'break-word' }}>
                             <Box sx={{ display: 'flex', mb: 1 }}>
                                 <Avatar variant="square" alt="Riment" src="src/static/images/logo.png" sx={{ mr: 1, width: 24, height: 24 }} />
                                 <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', mr: 1 }}>Riment</Typography>
                             </Box>
-                            {message.output}
+                            <Markdown>
+                                {message.output}
+                            </Markdown>
                         </Box>
                         <Divider sx={{ my: 1 }} />
                     </Box>

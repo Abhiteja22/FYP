@@ -8,6 +8,7 @@ export default function MyTextField(props) {
     <Controller
         name = {name}
         control = {control}
+        defaultValue=""
         render = {({
             field: {onChange, value},
             fieldState:{error},

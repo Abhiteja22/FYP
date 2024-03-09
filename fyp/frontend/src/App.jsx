@@ -1,7 +1,6 @@
 import './App.css';
-import { createTheme, colors, ThemeProvider, CssBaseline } from '@mui/material';
-import {Routes, Route, useLocation} from 'react-router-dom';
-import Home from './components/Home';
+import { Routes, Route } from 'react-router-dom';
+import Portfolio from './components/Portfolio';
 import About from './components/About';
 import Create from './components/Create';
 import MiniDrawer from './components/NavBar';
@@ -14,78 +13,34 @@ import CreateChat from './components/CreateChat';
 import EditChat from './components/EditChat';
 import Login from './components/Login';
 import Register from './components/Register';
-import { Palette } from '@mui/icons-material';
-
-const getDesignTokens = (mode) => ({
-  palette: {
-    mode,
-    ...(mode === 'light'
-      ? {
-          // Light mode palette
-          background: {
-            default: '#f5f5ff',
-          },
-          primary: {
-            main: '#104ec1',
-          },
-          secondary: {
-            main: '#8b98e9',
-            light: '#a2aced'
-          },
-        }
-      : {
-          // Dark mode palette
-          background: {
-            default: '#00000e',
-          },
-          primary: {
-            main: '#3e7cef',
-          },
-          secondary: {
-            main: '#162374',
-            dark: '#0f1851'
-          },
-        }),
-  },
-});
-
-// Create a theme instance based on the preferred mode
-const theme = createTheme(getDesignTokens('dark'));
+import Home from './components/Home';
+import MainWrapper from './layouts/MainWrapper';
+import PrivateRoute from './layouts/PrivateRoute';
+import Private from './components/Private';
+import Logout from './components/Logout';
 
 function App() {
-  const location = useLocation()
-  const noNavBar = location.pathname === "/register" || location.pathname === "/"
   return (
-    <ThemeProvider theme={theme}>
-    <CssBaseline />
-    <div className='App'>
-      {
-        noNavBar ?
+      <MainWrapper>
         <Routes>
-          <Route path='/' element={<Login/>}/>
+          <Route path='/login' element={<Login/>}/>
           <Route path='/register' element={<Register/>}/>
+          <Route path='/logout' element={<Logout/>}/>
+
+          <Route path='/private' element={<PrivateRoute> <MiniDrawer content= {<Private/>} /> </PrivateRoute>}/>
+          <Route path="/" element={<PrivateRoute> <MiniDrawer content= {<Home/>} /> </PrivateRoute>} />
+          <Route path='/portfolio' element={<PrivateRoute> <MiniDrawer content= {<Portfolio/>} /> </PrivateRoute>}/>
+          <Route path='/about' element={<PrivateRoute> <MiniDrawer content= {<About/>} /> </PrivateRoute>}/>
+          <Route path='/create' element={<PrivateRoute> <MiniDrawer content= {<Create/>} /> </PrivateRoute>}/>
+          <Route path='/portfolio/edit/:id' element={<PrivateRoute> <MiniDrawer content= {<Edit/>} /> </PrivateRoute>}/>
+          <Route path='/portfolio/delete/:id' element={<PrivateRoute> <MiniDrawer content= {<Delete/>} /> </PrivateRoute>}/>
+          <Route path='/createPortfolioAsset' element={<PrivateRoute> <MiniDrawer content= {<CreatePortfolioAsset/>} /> </PrivateRoute>}/>
+          <Route path='/chat' element={<PrivateRoute> <MiniDrawer content= {<Chat/>} /> </PrivateRoute>}/>
+          <Route path='/chat/create' element={<PrivateRoute> <MiniDrawer content= {<CreateChat/>} /> </PrivateRoute>}/>
+          <Route path='/chat/edit/:id' element={<PrivateRoute> <MiniDrawer content= {<EditChat/>} /> </PrivateRoute>}/>
+          <Route path='/chat/:chatId' element={<PrivateRoute> <MiniDrawer content= {<Interact/>} /> </PrivateRoute>}/>
         </Routes>
-        :
-        <MiniDrawer 
-        content = {
-          <Routes>
-            <Route path='/home' element={<Home/>}/>
-            <Route path='/about' element={<About/>}/>
-            <Route path='/create' element={<Create/>}/>
-            <Route path='/edit/:id' element={<Edit/>}/>
-            <Route path='/delete/:id' element={<Delete/>}/>
-            <Route path='/createPortfolioAsset' element={<CreatePortfolioAsset/>}/>
-            <Route path='/chat' element={<Chat/>}/>
-            <Route path='/chat/create' element={<CreateChat/>}/>
-            <Route path='/chat/edit/:id' element={<EditChat/>}/>
-            <Route path='/chat/:chatId' element={<Interact/>}/>
-          </Routes>
-        }
-      />
-      }
-      
-    </div>
-    </ThemeProvider>
+      </MainWrapper>
   );
 }
 

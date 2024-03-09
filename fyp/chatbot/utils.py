@@ -1,17 +1,20 @@
 import os
 from langchain.tools import StructuredTool
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SerpAPIWrapper
 import yfinance as yf
+from typing import Dict
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.tools.convert_to_openai import format_tool_to_openai_function
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
+from langchain.agents.format_scratchpad.openai_tools import ( format_to_openai_tool_messages )
+from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.agents import AgentExecutor, load_tools
 from langchain.prompts import PromptTemplate
-from langchain.chat_models import ChatOpenAI
 from langchain.chains import LLMChain, SequentialChain
 from langchain.memory import SimpleMemory
+from langchain.pydantic_v1 import BaseModel, Field
 from langchain_community.tools.google_finance import GoogleFinanceQueryRun
 from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
 from app.views import create_portfolio_openAI, add_to_portfolio, get_portfolios, edit_portfolio_name, delete_portfolio, remove_from_portfolio
@@ -94,7 +97,11 @@ def get_portfolio_stddev(portfolio_assets):
     return portfolio_standard_deviation
 
 def calculate_portfolio_details(ticker_symbols):
-    """Returns various details of the portfolio taking a dictionary of key: asset ticker symbols and value: quantity"""
+    """
+    Returns all the required details of a portfolio to display to user
+    :param ticker_symbols: A dictionary of symbols and quantities of the assets in a portfolio
+    :return: A dictionary of relevant information of the stock and the entire portfolio
+    """
     risk_free_rate = get_user_risk_free_rate()
     portfolio_details = {}
     portfolio_details["Portfolio"] = {}
@@ -128,8 +135,21 @@ def calculate_portfolio_details(ticker_symbols):
 
     return portfolio_details
 
-def get_asset_details(ticker):
-    """Gets all the required details of a stock to display to user using asset's ticker symbol as input."""
+def get_asset_details(ticker: str) -> dict:
+    """
+    Returns all the required details of a stock to display to user
+    :param ticker: Stock ticker symbol
+    :return: A dictionary of information of the stock with keys and their description:
+    beta: Beta of the stock
+    price: Current price of the stock
+    currency: Currency of the stock in the market
+    standard_deviation: Standard deviation of the stock
+    expected_asset_return: Expected asset return of the stock based on user's risk profile
+    sharpe_ratio: Sharpe ratio of the stock
+    user_risk_level: User's risk level
+    user_market_return: User's expected market return
+    user_risk_free_rate: User's risk free rate
+    """
     beta = get_asset_beta_yahoo(ticker)
     price = get_asset_price_yahoo(ticker)
     standard_deviation = get_asset_stddev_yahoo(ticker)
@@ -143,11 +163,11 @@ def get_asset_details(ticker):
         "price": price['price'], 
         "currency": price['currency'],
         "standard_deviation": standard_deviation,
+        "expected_asset_return": expected_asset_return,
+        "sharpe_ratio": sharpe_ratio,
         "user_risk_level": risk_level, 
         "user_market_return": market_return,
-        "user_risk_free_rate": risk_free_rate,
-        "expected_asset_return": expected_asset_return,
-        "sharpe_ratio": sharpe_ratio
+        "user_risk_free_rate": risk_free_rate
     }
     return return_dict
 
@@ -189,23 +209,66 @@ def suggest_portfolio(tickers):
 
     return return_dict
 
+class TickerInput(BaseModel):
+    ticker: str = Field(description="Stock ticker symbol of a particular stock")
+
+class UserInput(BaseModel):
+    username: str = Field(description="Username of user")
+
+class QuantityInput(BaseModel):
+    quantity: float = Field(description="Quantity of the asset")
+
+class PortfolioInput(BaseModel):
+    ticker_symbols: Dict[TickerInput, QuantityInput]
+
+def get_tools():
+    SERPAPI_KEY = "f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7"
+    search = SerpAPIWrapper(serpapi_api_key=SERPAPI_KEY)
+    serp_api_tool = StructuredTool.from_function(
+        func=search.run,
+        name="search",
+        description="useful to descriptive information of an asset such as company description, company industry, company products"
+    )
+    get_asset_details_tool = StructuredTool.from_function(
+        func=get_asset_details,
+        name="get_asset_details",
+        description="useful for obtaining details of an asset (price, beta, currency, standard_deviation, expected_asset_return, expected_asset_return, sharpe_ratio, user_risk_level, user_market_return, user_risk_free_rate,)",
+        args_schema=TickerInput
+    )
+    get_portfolios_tool = StructuredTool.from_function(
+        func=get_portfolios,
+        name="get_portfolios",
+        description="useful for obtaining user's portfolios",
+        args_schema=UserInput
+    )
+    # Calculates a portfolio's detail on the spot (Not needed, rethink entire model again)
+    # calculate_portfolio_details_tool = StructuredTool.from_function(
+    #     func=calculate_portfolio_details,
+    #     name="calculate_portfolio_details",
+    #     description="useful for calculating details about a given portfolio",
+    #     args_schema=PortfolioInput
+    # )
+
+    tools = [
+        serp_api_tool,
+        get_asset_details_tool,
+        get_portfolios_tool
+    ]
+
+    return tools
+
 # TODO: Only allow logged in user to create portfolios
 def chatbot(input, user):
     # Tools
-    search = SerpAPIWrapper(serpapi_api_key="f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7")
-    google_finance_tool = GoogleFinanceQueryRun(api_wrapper=GoogleFinanceAPIWrapper(serp_api_key='f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7'))
-    serp_api_tool = StructuredTool.from_function(search.run)
-    get_asset_details_tool = StructuredTool.from_function(get_asset_details)
-    calculate_portfolio_details_tool = StructuredTool.from_function(calculate_portfolio_details)
-    get_portfolios_tool = StructuredTool.from_function(get_portfolios)
-    create_portfolio_tool = StructuredTool.from_function(create_portfolio_openAI)
-    add_to_portfolio_tool = StructuredTool.from_function(add_to_portfolio)
-    edit_portfolio_name_tool = StructuredTool.from_function(edit_portfolio_name)
-    delete_portfolio_tool = StructuredTool.from_function(delete_portfolio)
-    remove_from_portfolio_tool = StructuredTool.from_function(remove_from_portfolio)
-    suggest_portfolio_tool = StructuredTool.from_function(suggest_portfolio)
+    # get_portfolios_tool = StructuredTool.from_function(get_portfolios)
+    # create_portfolio_tool = StructuredTool.from_function(create_portfolio_openAI)
+    # add_to_portfolio_tool = StructuredTool.from_function(add_to_portfolio)
+    # edit_portfolio_name_tool = StructuredTool.from_function(edit_portfolio_name)
+    # delete_portfolio_tool = StructuredTool.from_function(delete_portfolio)
+    # remove_from_portfolio_tool = StructuredTool.from_function(remove_from_portfolio)
+    # suggest_portfolio_tool = StructuredTool.from_function(suggest_portfolio)
     
-    tools = [serp_api_tool, get_asset_details_tool, calculate_portfolio_details_tool, create_portfolio_tool, get_portfolios_tool, edit_portfolio_name_tool, add_to_portfolio_tool, delete_portfolio_tool, remove_from_portfolio_tool, suggest_portfolio_tool, google_finance_tool]
+    tools =  get_tools() #[serp_api_tool, get_asset_details_tool, calculate_portfolio_details_tool, create_portfolio_tool, get_portfolios_tool, edit_portfolio_name_tool, add_to_portfolio_tool, delete_portfolio_tool, remove_from_portfolio_tool, suggest_portfolio_tool, google_finance_tool]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -213,14 +276,25 @@ def chatbot(input, user):
                 "system",
                 """
                 You are very powerful assistant specialising in financial information.
-                First of all, you should always find out what is the stock ticker symbol given a stock/asset name and use this as an input to all tools.
-                You must give information about all the information of the stock/portfolio and the {user} including the financial risk metrics and also the industry and brief introduction of the company. 
-                You must help {user} to create a portfolio taking the required name of the portfolio as input. 
-                Username is always {user}.
+                First of all, you are required to find out what is the stock ticker symbol given a stock/asset name and use this as an input to all tools.
+
+                When a user is querying about a specific stock/asset, you must provide the user with the stock name, stock ticker symbol, a basic description of the company, their industry and the product, 
+                stock price, stock beta, stock's standard deviation, stock's expected returns, and stock's sharpe ratio. You should also state that the metrics were calculated based on user's defined
+                details such as user's risk level, user's expected market return and user's risk free rate. List all the details in a nice readable structure.
+                
+                You must also be able to handle user's queries regarding their portfolios such as retrieving a list of portfolios, 
+                
+                You should also help to calculate details about a provided portfolio taking the assets and their quantities as inputs.
+
+                Output should always be formatted in a readable and neat manner with markdown.
+                
                 """,
             ),
-            ("user", "{input}"),
+            ('human', "My username is {user}"),
+            MessagesPlaceholder("chat_history", optional=True),
+            ("human", "{input}"),
             MessagesPlaceholder(variable_name="agent_scratchpad"),
+            
         ]
     )
     llm = ChatOpenAI(temperature = 0.0, openai_api_key="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")
@@ -248,8 +322,8 @@ def chatbot(input, user):
     # chain_two = agent
 
     # overall_chain = SequentialChain(chains=[chain_one, chain_two], input_variables=["input"], verbose=True, memory=SimpleMemory(memories={"user": user}))
-
     response = agent_executor.invoke({"input":input, "user": user})["output"]
+    print(response)
     # response = overall_chain.invoke({"input": input})["output"]
     
     return response

@@ -5,7 +5,7 @@ import MyTextField from "./forms/MyTextField";
 import MyNumberField from "./forms/MyNumberField";
 import BasicSelectField from "./forms/BasicSelectField";
 import {useForm} from 'react-hook-form';
-import AxiosInstance from "./Axios";
+import AxiosInstance from '../utils/Axios';
 import { useNavigate } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"

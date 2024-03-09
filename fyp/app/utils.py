@@ -12,6 +12,7 @@ import plotly.express as px
 import json
 import yfinance as yf
 from pmdarima import auto_arima
+from .models import *
 
 
 def calculate_expected_asset_return(beta, risk_free_rate, expected_market_return):
@@ -216,6 +217,20 @@ def get_portfolio_stddev(asset_details):
         return portfolio_stddev
     else:
         return None
+    
+def get_portfolio_value(portfolio, user):
+    portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
+    combined_assets = {}
+    
+    for asset in portfolio_assets:
+        if asset.asset_ticker in combined_assets:
+            combined_assets[asset.asset_ticker] += asset.quantity
+        else:
+            combined_assets[asset.asset_ticker] = asset.quantity
+
+    # Now, combined_assets contains the aggregated quantity of each asset
+    # Call calculate_portfolio_details with the combined assets and the user profile
+    return calculate_portfolio_details(combined_assets, user)
     
 def calculate_portfolio_details(portfolioAssets, profile):
     risk_free_rate = get_risk_free_rate(profile.investment_time_period)

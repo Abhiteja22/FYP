@@ -1,7 +1,7 @@
 
 import {React, useEffect, useState} from "react";
 import { Box, Typography, Button } from "@mui/material";
-import AxiosInstance from "./Axios";
+import AxiosInstance from '../utils/Axios';
 import { useNavigate, useParams } from "react-router-dom";
 
 const Delete = () => {

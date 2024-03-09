@@ -16,13 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from app.views import *
-
+from rest_framework.authtoken import views
 
 urlpatterns = [
     path('', include('app.urls')),
+    path('api-token-auth', views.obtain_auth_token),
     path('chatbot/', include('chatbot.urls')),
-    path('accounts/', include('django.contrib.auth.urls')),
-    path('admin/', admin.site.urls),
-    # path('', ReactView.as_view(), name="anything")
+    # path('accounts/', include('django.contrib.auth.urls')),
+    path('admin/', admin.site.urls)
 ]

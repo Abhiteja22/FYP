@@ -5,7 +5,6 @@ import MuiDrawer from '@mui/material/Drawer';
 import MuiAppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
-import CssBaseline from '@mui/material/CssBaseline';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
@@ -16,15 +15,11 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import MailIcon from '@mui/icons-material/Mail';
 import HomeIcon from '@mui/icons-material/Home';
-import AddIcon from '@mui/icons-material/Add';
 import AssistantIcon from '@mui/icons-material/Assistant';
 import Avatar from '@mui/material/Avatar';
 import CardTravelIcon from '@mui/icons-material/CardTravel';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import {Link, useLocation} from 'react-router-dom';
 
 const drawerWidth = 240;
@@ -176,8 +171,8 @@ export default function MiniDrawer(props) {
                     px: 2.5,
                   }}
                   component={Link}
-                  to="/"
-                  selected={"/" === path}
+                  to="/portfolio"
+                  selected={"/portfolio" === path}
                 >
                 <ListItemIcon
                   sx={{
@@ -262,6 +257,29 @@ export default function MiniDrawer(props) {
                 <TipsAndUpdatesIcon/>
                 </ListItemIcon>
                 <ListItemText primary={'View Assets'} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem key={'LOGOUT'} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                  }}
+                  component={Link}
+                  to="/logout"
+                  selected={"/logout" === path}
+                >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 3 : 'auto',
+                    justifyContent: 'center',
+                  }}
+                >
+                <TipsAndUpdatesIcon/>
+                </ListItemIcon>
+                <ListItemText primary={'LOGOUT'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
             </ListItem>
         </List>
