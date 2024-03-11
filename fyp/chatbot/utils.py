@@ -17,7 +17,7 @@ from langchain.memory import SimpleMemory
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain_community.tools.google_finance import GoogleFinanceQueryRun
 from langchain_community.utilities.google_finance import GoogleFinanceAPIWrapper
-from app.views import create_portfolio_openAI, add_to_portfolio, get_portfolios, edit_portfolio_name, delete_portfolio, remove_from_portfolio
+from app.views import get_portfolios
 import numpy as np
 from pypfopt.expected_returns import mean_historical_return
 from pypfopt.risk_models import CovarianceShrinkage

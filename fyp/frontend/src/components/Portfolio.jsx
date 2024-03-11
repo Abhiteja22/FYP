@@ -12,10 +12,6 @@ import { useTable, useSortBy } from 'react-table';
 import { useAuthStore } from "../store/auth";
 
 const Portfolio = () => {
-    const [isLoggedIn, user] = useAuthStore((state) => [
-      state.isLoggedIn,
-      state.user,
-    ]);
     const [myData, setMydata] = useState([])
     const [loading, setLoading] = useState(true)
     const GetData = () => {
@@ -30,7 +26,6 @@ const Portfolio = () => {
         GetData();
     },[])
 
-    
     const columns = useMemo(
         () => [
         {
@@ -92,23 +87,8 @@ const Portfolio = () => {
       
     return (
       <div>
-      { isLoggedIn() 
-        ? 
-          <LoggedInView user={user()} loading={loading} rows={rows} prepareRow={prepareRow} handleSortChange={handleSortChange} openFilter={openFilter} handleOpenFilter={handleOpenFilter} handleCloseFilter={handleCloseFilter} /> 
-        : 
-          <LoggedOutView />
-      }
-      </div>
-    )
-}
-
-const LoggedInView = ({ user, loading, rows, prepareRow, handleSortChange, openFilter, handleOpenFilter, handleCloseFilter }) => {
-  return (
-    <Box>
+        <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-              <Typography variant="h4" component="h2">
-                  {user.username}
-              </Typography>
               <Typography variant="h4" component="h2">
                   Your Collection of Portfolios
               </Typography>
@@ -150,18 +130,8 @@ const LoggedInView = ({ user, loading, rows, prepareRow, handleSortChange, openF
           </Container>
           }
       </Box>
-  )
-}
-
-export const LoggedOutView = ({ title = 'Home' }) => {
-  return (
-    <div>
-      <h1>{title}</h1>
-      <Button variant='contained' sx={{width: '100%', backgroundColor: '#0C0032'}} component={Link} to="/login">
-        Not logged In?
-      </Button>
-    </div>
-  )
+      </div>
+    )
 }
 
 export default Portfolio

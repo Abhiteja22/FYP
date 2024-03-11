@@ -2,13 +2,13 @@ from django.contrib import admin
 from .models import Asset, Portfolio, PortfolioAsset, Profile
 
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "risk_aversion",)
+    list_display = ("user",)
 
 class AssetAdmin(admin.ModelAdmin):
-    list_display = ("ticker", "name", "country", "type", "exchange", "ipoDate", "delistingDate", "status")
+    list_display = ("ticker", "name", "country", "exchange", "sector", "industry", "asset_type")
 
 class PortfolioAdmin(admin.ModelAdmin):
-    list_display = ("name", "alpha", "beta","creation_date", "user")
+    list_display = ("name", "creation_date", "user")
 
 class PortfolioAssetAdmin(admin.ModelAdmin):
     list_display = ("portfolio", "asset_ticker", "quantity",)  
