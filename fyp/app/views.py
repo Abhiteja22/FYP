@@ -1,5 +1,6 @@
 import json
 from django.contrib.auth.models import User
+from django.forms.models import model_to_dict
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, generics, status
@@ -43,9 +44,10 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @permission_classes([permissions.IsAuthenticated])
 def getAssetsEndPoint(request):
     if request.method == 'GET':
-        # Return all Asset (Asset.objects.get())
-        pass
-    return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
+        assets = Asset.objects.all()
+        serializer = AssetSerializer(assets, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response("Invalid request method", status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
 @permission_classes([permissions.IsAuthenticated])
@@ -74,7 +76,7 @@ class RegisterView(generics.CreateAPIView):
         
 class AssetView(viewsets.ViewSet):
     queryset = Asset.objects.all()
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AssetSerializer
 
     def list(self, request):
@@ -92,8 +94,10 @@ class AssetView(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):
         asset = self.queryset.get(pk=pk)
-        serializer = self.serializer_class(asset)
-        return Response(serializer.data)
+        additional_details = get_asset_details_general(asset.ticker)
+        serialized_asset = self.serializer_class(asset).data
+        response_data = {**serialized_asset, **additional_details}
+        return Response(response_data)
 
     def update(self, request, pk=None):
         asset = self.queryset.get(pk=pk)

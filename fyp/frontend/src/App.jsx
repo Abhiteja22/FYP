@@ -18,6 +18,8 @@ import MainWrapper from './layouts/MainWrapper';
 import PrivateRoute from './layouts/PrivateRoute';
 import Private from './components/Private';
 import Logout from './components/Logout';
+import Assets from './components/Assets';
+import Asset from './components/Asset';
 
 function App() {
   return (
@@ -27,6 +29,10 @@ function App() {
           <Route path='/register' element={<Register/>}/>
           <Route path='/logout' element={<Logout/>}/>
 
+          {/* Redoing */}
+          <Route path='/assets' element={<PrivateRoute> <MiniDrawer content= {<Assets/>} /> </PrivateRoute>}/>
+          <Route path='/assets/:id' element={<PrivateRoute> <MiniDrawer content= {<Asset/>} /> </PrivateRoute>}/>
+          {/* Previous Routes */}
           <Route path='/private' element={<PrivateRoute> <MiniDrawer content= {<Private/>} /> </PrivateRoute>}/>
           <Route path="/" element={<PrivateRoute> <MiniDrawer content= {<Home/>} /> </PrivateRoute>} />
           <Route path='/portfolio' element={<PrivateRoute> <MiniDrawer content= {<Portfolio/>} /> </PrivateRoute>}/>
@@ -39,6 +45,7 @@ function App() {
           <Route path='/chat/create' element={<PrivateRoute> <MiniDrawer content= {<CreateChat/>} /> </PrivateRoute>}/>
           <Route path='/chat/edit/:id' element={<PrivateRoute> <MiniDrawer content= {<EditChat/>} /> </PrivateRoute>}/>
           <Route path='/chat/:chatId' element={<PrivateRoute> <MiniDrawer content= {<Interact/>} /> </PrivateRoute>}/>
+          
         </Routes>
       </MainWrapper>
   );

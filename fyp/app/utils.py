@@ -83,20 +83,21 @@ def get_historical_prices(ticker, period, interval):
     return hist_asset
 
 def get_daily_returns(ticker, period, interval):
-    asset = yf.Ticker(ticker)
-    hist_asset = asset.history(period=period,interval=interval)
+    hist_asset = get_historical_prices(ticker, period, interval)
     daily_returns_asset = hist_asset['Close'].pct_change().dropna()
-
-    daily_returns_asset
+    return daily_returns_asset
 
 def get_asset_beta(asset, time_period, market_index):
     yf_period, yf_interval = get_period_and_interval(time_period)
-
     returns_market_index = get_daily_returns(market_index, yf_period, yf_interval)
     returns_asset = get_daily_returns(asset, yf_period, yf_interval)
-
-    covariance = np.cov(returns_asset, returns_market_index)[0][1]
-    variance_market_index = np.var(returns_market_index)
+    start_date = max(returns_asset.index.min(), returns_market_index.index.min())
+    aligned_returns_asset = returns_asset[returns_asset.index >= start_date]
+    aligned_returns_market_index = returns_market_index[returns_market_index.index >= start_date]
+    print(aligned_returns_asset)
+    print(aligned_returns_market_index)
+    covariance = np.cov(aligned_returns_asset, aligned_returns_market_index)[0][1]
+    variance_market_index = np.var(aligned_returns_market_index)
 
     beta_asset = covariance / variance_market_index
 
@@ -109,8 +110,9 @@ def get_asset_price(ticker):
     
     return latest_price
 
-def get_asset_stddev(ticker):
-    daily_returns = get_daily_returns(ticker)
+def get_asset_stddev(ticker, period):
+    yf_period, yf_interval = get_period_and_interval(period)
+    daily_returns = get_daily_returns(ticker, yf_period, yf_interval)
     stddev = daily_returns.std()
     
     return stddev
@@ -128,20 +130,19 @@ def get_sharpe_ratio(expected_return, std_dev, risk_free_rate):
 
 def get_asset_details_general(ticker):
     time_period = '1year'
-    interval = '1d'
     market_index = '^GSPC'
     risk_free_rate = get_risk_free_rate(time_period)
     market_return = get_expected_market_return(market_index, time_period)
     price = get_asset_price(ticker)
     beta = get_asset_beta(ticker, time_period, market_index)
-    historical_prices = get_historical_prices(ticker, time_period, interval)
-    standard_deviation = get_asset_stddev(ticker)
-    expected_return = get_asset_expected_return(ticker, market_return, risk_free_rate)
+    # historical_prices = get_historical_prices(ticker, time_period, interval)
+    standard_deviation = get_asset_stddev(ticker, time_period)
+    expected_return = get_asset_expected_return(beta, market_return, risk_free_rate)
     sharpe_ratio = get_sharpe_ratio(expected_return, standard_deviation, risk_free_rate)
     return_dict = {
         'current_price': price,
         'beta': beta,
-        'price_history': historical_prices,
+        # 'price_history': historical_prices,
         'sharpe_ratio': sharpe_ratio,
         'standard_deviation': standard_deviation,
         'expected_return': expected_return

@@ -20,6 +20,7 @@ import AssistantIcon from '@mui/icons-material/Assistant';
 import Avatar from '@mui/material/Avatar';
 import CardTravelIcon from '@mui/icons-material/CardTravel';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
+import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 import {Link, useLocation} from 'react-router-dom';
 
 const drawerWidth = 240;
@@ -244,8 +245,8 @@ export default function MiniDrawer(props) {
                     px: 2.5,
                   }}
                   component={Link}
-                  to="/"
-                  selected={"/" === path}
+                  to="/assets"
+                  selected={"/assets" === path}
                 >
                 <ListItemIcon
                   sx={{
@@ -254,7 +255,7 @@ export default function MiniDrawer(props) {
                     justifyContent: 'center',
                   }}
                 >
-                <TipsAndUpdatesIcon/>
+                <CandlestickChartIcon/>
                 </ListItemIcon>
                 <ListItemText primary={'View Assets'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
