@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
-import Login from './Login';
+import Login from './authentication/Login';
 
 const Home = () => {
     const [isLoggedIn, user] = useAuthStore((state) => [

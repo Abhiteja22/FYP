@@ -52,6 +52,9 @@ class Portfolio(models.Model):
     def __str__(self):
         return self.name
     
+    def get_portfolio_assets(self):
+        return self.assets.all()
+    
 class Asset(models.Model):
     SECTOR_CHOICES = [
         ('Finance', 'Finance'),

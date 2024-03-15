@@ -1,11 +1,11 @@
 
 import {React, useEffect, useState} from "react";
 import { Box, Typography, Button } from "@mui/material";
-import MyTextField from "./forms/MyTextField";
-import MyNumberField from "./forms/MyNumberField";
-import BasicSelectField from "./forms/BasicSelectField";
+import MyTextField from "../forms/MyTextField";
+import MyNumberField from "../forms/MyNumberField";
+import BasicSelectField from "../forms/BasicSelectField";
 import {useForm} from 'react-hook-form';
-import AxiosInstance from '../utils/Axios';
+import AxiosInstance from '../../utils/Axios';
 import { useNavigate } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -17,7 +17,6 @@ const CreatePortfolioAsset = () => {
     const GetData = () => {
         AxiosInstance.get(`portfolio/`).then((res) => {
             setPortfolio(res.data)
-            console.log(res.data)
             setLoading(false)
         })
     }

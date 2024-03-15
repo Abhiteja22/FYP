@@ -17,6 +17,8 @@ const SORT_OPTIONS = [
 //   { value: 'valueDes', label: 'Value: High-Low' },
   { value: 'creation_date_Asc', label: 'Creation Date: Oldest-Newest' },
   { value: 'creation_date_Des', label: 'Creation Date: Newest-Oldest' },
+  { value: 'portfolio_value_Asc', label: 'Portfolio Value: Lowest-Highest' },
+  { value: 'portfolio_value_Des', label: 'Portfolio Value: Highest-Lowest' }
 ];
 
 export default function PortfolioSort({ onSortChange }) {
@@ -44,6 +46,12 @@ export default function PortfolioSort({ onSortChange }) {
         } else if (value === 'creation_date_Des') {
             sortConfig.id = 'creation_date'
             sortConfig.desc = true;
+        } else if (value === 'portfolio_value_Asc') {
+          sortConfig.id = 'portfolio_value'
+          sortConfig.desc = false;
+        } else if (value === 'portfolio_value_Des') {
+          sortConfig.id = 'portfolio_value'
+          sortConfig.desc = true;
         }
         onSortChange(sortConfig);
     }

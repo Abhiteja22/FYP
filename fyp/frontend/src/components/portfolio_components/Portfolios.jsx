@@ -1,25 +1,29 @@
 
 import {React, useEffect, useMemo, useState} from "react";
-import AxiosInstance from '../utils/Axios';
 import Dayjs from 'dayjs';
-import { Box, IconButton, Typography, Button, Stack, Grid, Container } from "@mui/material";
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Box, Typography, Button, Stack, Grid, Container } from "@mui/material";
 import {Link} from 'react-router-dom'
-import PortfolioFilters from "./portfolio_components/portfolio_filters";
-import PortfolioSort from "./portfolio_components/portfolio_sort"
-import PortfolioCard from "./portfolio_components/portfolio_card";
+import PortfolioFilters from "./portfolio_filters";
+import PortfolioSort from "./portfolio_sort"
+import PortfolioCard from "./portfolio_card";
 import { useTable, useSortBy } from 'react-table';
-import { useAuthStore } from "../store/auth";
+import useAxios from '../../utils/useAxios';
+import Create from "./Create";
 
-const Portfolio = () => {
-    const [myData, setMydata] = useState([])
+const Portfolios = () => {
+    const [portfolio, setPortfolios] = useState([])
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(true)
-    const GetData = () => {
-        AxiosInstance.get(`portfolio/`).then((res) => {
-            setMydata(res.data)
-            console.log(res.data)
-            setLoading(false)
-        })
+    const api = useAxios();
+    const GetData = async () => {
+      try {
+        const response = await api.get('/portfolio/');
+        setPortfolios(response.data)
+        setLoading(false)
+      } catch (error) {
+        console.log(error)
+        setError(error.response?.data.detail || "An error occurred while fetching the portfolios.")
+      }
     }
 
     useEffect(() => {
@@ -37,21 +41,10 @@ const Portfolio = () => {
             Cell: ({ value }) => Dayjs(value).format('DD MMMM YYYY'),
             Header: 'Created On'
         },
-        // Add the Actions column here, at the end
         {
-            id: 'actions', // 'id' is used since this column doesn't directly access data
-            Header: 'Actions',
-            Cell: ({row}) => (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                    <IconButton color="secondary" component={Link} to={`edit/${row.original.id}`}>
-                        <EditIcon />
-                    </IconButton>
-                    <IconButton color="error" component={Link} to={`delete/${row.original.id}`}>
-                        <DeleteIcon />
-                    </IconButton>
-                </Box>
-            )
-        }
+          accessor: 'portfolio_value',
+          Header: 'Portfolio Value'
+      }
         ],
         [],
     );
@@ -64,7 +57,7 @@ const Portfolio = () => {
       setSortBy,
     } = useTable({
         columns,
-        data: myData,
+        data: portfolio,
         initialState: { sortBy: [sortConfig] }
       },
       useSortBy
@@ -85,19 +78,30 @@ const Portfolio = () => {
       setOpenFilter(false);
     };
       
+    const [openCreate, setOpenCreate] = useState(false);
+
+    const handleOpenCreate = () => {
+      setOpenCreate(true);
+    };
+
+    const handleCloseCreate = () => {
+      setOpenCreate(false);
+    }
     return (
       <div>
         <Box>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
               <Typography variant="h4" component="h2">
                   Your Collection of Portfolios
               </Typography>
-              <Button variant="contained" component={Link} to="/create">
-                  Create New Portfolio
-              </Button>
-          </Box>
-          <Box sx={{ width: '80%', maxWidth: 800, mx: 'auto' }}>
-              {/* <MaterialReactTable table={table} /> */}
+              <Box>
+              <Create
+                openCreate={openCreate}
+                onOpenCreate={handleOpenCreate}
+                onCloseCreate={handleCloseCreate}
+              />
+              </Box>
           </Box>
           { loading ? <p>Loading data...</p> :
           <Container>
@@ -118,7 +122,7 @@ const Portfolio = () => {
               </Stack>
             </Stack>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
             {rows.map(row => {
                   prepareRow(row);
                   return ( <Grid key={row.original.id} xs={12} sm={6} md={3}>
@@ -134,4 +138,4 @@ const Portfolio = () => {
     )
 }
 
-export default Portfolio
+export default Portfolios

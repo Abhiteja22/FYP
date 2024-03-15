@@ -1,25 +1,25 @@
 import './App.css';
 import { Routes, Route } from 'react-router-dom';
-import Portfolio from './components/Portfolio';
+import Portfolios from './components/portfolio_components/Portfolios';
 import About from './components/About';
-import Create from './components/Create';
+import Create from './components/portfolio_components/Create';
 import MiniDrawer from './components/NavBar';
-import Edit from './components/Edit';
-import Delete from './components/Delete';
-import CreatePortfolioAsset from './components/CreatePortfolioAsset';
+import Edit from './components/portfolio_components/Edit';
+import Delete from './components/portfolio_components/Delete';
+import CreatePortfolioAsset from './components/portfolio_components/CreatePortfolioAsset';
 import Chat from './components/Chat';
 import Interact from './components/Interact';
 import CreateChat from './components/CreateChat';
 import EditChat from './components/EditChat';
-import Login from './components/Login';
-import Register from './components/Register';
+import Login from './components/authentication/Login';
+import Register from './components/authentication/Register';
 import Home from './components/Home';
 import MainWrapper from './layouts/MainWrapper';
 import PrivateRoute from './layouts/PrivateRoute';
 import Private from './components/Private';
-import Logout from './components/Logout';
-import Assets from './components/Assets';
-import Asset from './components/Asset';
+import Logout from './components/authentication/Logout';
+import Assets from './components/asset_components/Assets';
+import Asset from './components/asset_components/Asset';
 
 function App() {
   return (
@@ -32,14 +32,11 @@ function App() {
           {/* Redoing */}
           <Route path='/assets' element={<PrivateRoute> <MiniDrawer content= {<Assets/>} /> </PrivateRoute>}/>
           <Route path='/assets/:id' element={<PrivateRoute> <MiniDrawer content= {<Asset/>} /> </PrivateRoute>}/>
+          <Route path='/portfolios' element={<PrivateRoute> <MiniDrawer content= {<Portfolios/>} /> </PrivateRoute>}/>
           {/* Previous Routes */}
           <Route path='/private' element={<PrivateRoute> <MiniDrawer content= {<Private/>} /> </PrivateRoute>}/>
           <Route path="/" element={<PrivateRoute> <MiniDrawer content= {<Home/>} /> </PrivateRoute>} />
-          <Route path='/portfolio' element={<PrivateRoute> <MiniDrawer content= {<Portfolio/>} /> </PrivateRoute>}/>
           <Route path='/about' element={<PrivateRoute> <MiniDrawer content= {<About/>} /> </PrivateRoute>}/>
-          <Route path='/create' element={<PrivateRoute> <MiniDrawer content= {<Create/>} /> </PrivateRoute>}/>
-          <Route path='/portfolio/edit/:id' element={<PrivateRoute> <MiniDrawer content= {<Edit/>} /> </PrivateRoute>}/>
-          <Route path='/portfolio/delete/:id' element={<PrivateRoute> <MiniDrawer content= {<Delete/>} /> </PrivateRoute>}/>
           <Route path='/createPortfolioAsset' element={<PrivateRoute> <MiniDrawer content= {<CreatePortfolioAsset/>} /> </PrivateRoute>}/>
           <Route path='/chat' element={<PrivateRoute> <MiniDrawer content= {<Chat/>} /> </PrivateRoute>}/>
           <Route path='/chat/create' element={<PrivateRoute> <MiniDrawer content= {<CreateChat/>} /> </PrivateRoute>}/>

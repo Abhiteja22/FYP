@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import useAxios from '../utils/useAxios';
+import useAxios from '../../utils/useAxios';
 import { Container, Grid, Typography } from '@mui/material';
-import AssetWidgetSummary from './asset_components/asset_widget_summary';
-import AssetPriceHistory from './asset_components/asset_price_history_chart';
+import AssetWidgetSummary from './asset_widget_summary';
+import AssetPriceHistory from './asset_price_history_chart';
 import numeral from 'numeral';
 
 const Asset = () => {
@@ -18,13 +18,10 @@ const Asset = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log(assetId)
                 const response = await api.get(`assets/${assetId}/`);
                 setAsset(response.data)
-                console.log(asset)
                 setLoading(false)
             } catch (error) {
-                console.log('error')
                 setError(error.response?.data.detail || "An error occurred while fetching the assets.");
             }
         };

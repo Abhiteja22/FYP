@@ -1,12 +1,12 @@
-import '../App.css'
+import '../../App.css'
 import { Box, Typography, Avatar, Button } from '@mui/material'
-import MyTextField from './forms/MyTextField'
+import MyTextField from '../forms/MyTextField'
 import {useForm} from 'react-hook-form';
-import MyPasswordField from './forms/MyPasswordField';
+import MyPasswordField from '../forms/MyPasswordField';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '../store/auth';
-import { login } from '../utils/auth'
+import { useAuthStore } from '../../store/auth';
+import { login } from '../../utils/auth'
 
 const Login = () => {
     const navigate = useNavigate();

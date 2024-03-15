@@ -30,10 +30,10 @@ export default function BasicSelectField(props) {
                     {
                         options.map((option) => (
                             <MenuItem
-                                key={option.id}
-                                value={option.id}
+                                key={option.value}
+                                value={option.value}
                                 >
-                                {option.name}
+                                {option.label}
                             </MenuItem>
                         ))
                     }

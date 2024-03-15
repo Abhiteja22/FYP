@@ -172,8 +172,8 @@ export default function MiniDrawer(props) {
                     px: 2.5,
                   }}
                   component={Link}
-                  to="/portfolio"
-                  selected={"/portfolio" === path}
+                  to="/portfolios"
+                  selected={"/portfolios" === path}
                 >
                 <ListItemIcon
                   sx={{

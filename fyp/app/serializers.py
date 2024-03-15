@@ -63,13 +63,15 @@ class AssetSerializer(serializers.ModelSerializer):
 
 class PortfolioSerializer(serializers.ModelSerializer):
     portfolio_value = serializers.SerializerMethodField()
+
     class Meta:
         model = Portfolio
-        fields = ['id', 'name', 'creation_date']
+        fields = '__all__'
 
     def get_portfolio_value(self, obj):
-        user = self.context.get('request').user
-        return get_portfolio_value(obj, user)
+        portfolio_assets = obj.get_portfolio_assets()
+        values, total_value = get_portfolio_value(portfolio_assets)
+        return total_value
 
 class PortfolioAssetSerializer(serializers.ModelSerializer):
     class Meta:

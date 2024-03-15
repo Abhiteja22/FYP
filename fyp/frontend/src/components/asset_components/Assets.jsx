@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useAxios from '../utils/useAxios';
+import useAxios from '../../utils/useAxios';
 import { MaterialReactTable, useMaterialReactTable } from 'material-react-table';
 
 const Assets = () => {
@@ -17,7 +17,6 @@ const Assets = () => {
                 setAssets(response.data)
                 setLoading(false)
             } catch (error) {
-                console.log('error')
                 setError(error.response?.data.detail || "An error occurred while fetching the assets.");
             }
         };
@@ -82,7 +81,6 @@ const Assets = () => {
         },
         muiTableBodyRowProps: ({ row }) => ({
             onClick: (event) => {
-              console.log(row.original.id)
               navigate(`/assets/${row.original.id}`);
             },
             sx: {

@@ -153,12 +153,12 @@ def get_portfolio_value(assets):
     values = {}
     total_value = 0
 
-    for asset, quantity in assets.items():
-        price = get_asset_price(asset)
-        value = price * quantity
-        values[asset] = value
-        total_value += value
-
+    for asset in assets:
+        current_price = get_asset_price(asset.asset_ticker)
+        asset_total_value = current_price * float(asset.quantity)
+        values[asset.asset_ticker] = asset_total_value
+        total_value += asset_total_value
+    
     return values, total_value
 
 def get_portfolio_beta(asset_tickers, time_period, market_index, weights):

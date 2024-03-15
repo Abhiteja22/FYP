@@ -1,13 +1,12 @@
-import '../App.css'
+import '../../App.css'
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button } from '@mui/material'
-import MyTextField from './forms/MyTextField'
+import MyTextField from '../forms/MyTextField'
 import {useForm} from 'react-hook-form';
-import MyPasswordField from './forms/MyPasswordField';
+import MyPasswordField from '../forms/MyPasswordField';
 import { Link, useNavigate } from 'react-router-dom';
-import { register } from '../utils/auth';
-import { useAuthStore } from '../store/auth';
-import AxiosInstance from '../utils/Axios';
+import { register } from '../../utils/auth';
+import { useAuthStore } from '../../store/auth';
 
 const Register = () => {
     const [username, setUsername] = useState('');
