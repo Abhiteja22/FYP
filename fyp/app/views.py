@@ -92,7 +92,7 @@ class AssetView(viewsets.ViewSet):
         return Response(response_data)
     
 class PortfolioView(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = PortfolioSerializer
 
     def get_queryset(self):
@@ -111,6 +111,7 @@ class PortfolioView(viewsets.ViewSet):
     def create(self, request):
         data = request.data.copy()
         data['user'] = request.user.pk
+        data['status'] = 'ACTIVE'
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -121,8 +122,12 @@ class PortfolioView(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         queryset = self.get_queryset()
         portfolio = queryset.get(pk=pk)
-        serializer = self.serializer_class(portfolio, context={'request': request})
-        return Response(serializer.data)
+        portfolio_assets = portfolio.get_portfolio_assets()
+        additional_details = get_portfolio_details_general(portfolio_assets, portfolio.investment_time_period, portfolio.market_index)
+        serialized_asset = self.serializer_class(portfolio, context={'request': request}).data
+        response_data = {**serialized_asset, **additional_details}
+        # serializer = self.serializer_class(portfolio, context={'request': request})
+        return Response(response_data)
 
     def update(self, request, pk=None):
         queryset = self.get_queryset()

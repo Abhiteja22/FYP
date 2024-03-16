@@ -44,6 +44,7 @@ class Portfolio(models.Model):
     name = models.CharField(max_length=50)
     risk_aversion = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(4)], null=True, blank=True,)
     market_index = models.CharField(max_length=10, null=True, blank=True, help_text="Ticker symbol of the market index used for calculations")
+    sector = models.CharField(max_length=100, null=True, blank=True)
     investment_time_period = models.CharField(max_length=6, choices=INVESTMENT_PERIOD_CHOICES, null=True)
     creation_date = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=6, choices=STATUS_CHOICES, null=True, blank=True,)
@@ -98,6 +99,9 @@ class PortfolioAsset(models.Model):
 
     def __str__(self):
         return f"{self.asset_ticker} in {self.portfolio.name}"
+    
+    def get_portfolio_assets(self):
+        return self.assets.all()
 
 # Signal to create or update Profile model whenever User model is updated
 @receiver(post_save, sender=User)

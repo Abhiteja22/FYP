@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import *
-from .utils import get_portfolio_value
+from .utils import get_portfolio_value, get_long_name
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -63,6 +63,7 @@ class AssetSerializer(serializers.ModelSerializer):
 
 class PortfolioSerializer(serializers.ModelSerializer):
     portfolio_value = serializers.SerializerMethodField()
+    market_index_long_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Portfolio
@@ -72,6 +73,10 @@ class PortfolioSerializer(serializers.ModelSerializer):
         portfolio_assets = obj.get_portfolio_assets()
         values, total_value = get_portfolio_value(portfolio_assets)
         return total_value
+    
+    def get_market_index_long_name(self, obj):
+        market_index = obj.market_index
+        return get_long_name(market_index)
 
 class PortfolioAssetSerializer(serializers.ModelSerializer):
     class Meta:

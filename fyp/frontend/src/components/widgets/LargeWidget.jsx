@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 
 // ----------------------------------------------------------------------
 
-export default function AssetWidgetSummary({ title, total, icon, color = 'primary', sx, height, ...other }) {
+export default function LargeWidget({ title, description, description2, icon, color = 'primary', sx, height, ...other }) {
   return (
     <Card
       component={Stack}
@@ -29,18 +29,23 @@ export default function AssetWidgetSummary({ title, total, icon, color = 'primar
         <Typography variant="subtitle2" sx={{ color: 'text.disabled' }}>
             {title}
         </Typography>
-        <Typography variant="h4" noWrap>{total ? total : "NA"}</Typography>
+        <Typography variant="h4" noWrap>{description ? description : "NA"}</Typography>
+        <Typography variant="h5" noWrap>{description2 ? description2 : "NA"}</Typography>
       </Stack>
     </Card>
   );
 }
 
-AssetWidgetSummary.propTypes = {
+LargeWidget.propTypes = {
   color: PropTypes.string,
   icon: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
   sx: PropTypes.object,
   title: PropTypes.string,
-  total: PropTypes.oneOfType([
+  description: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+  ]),
+  description2: PropTypes.oneOfType([
     PropTypes.string,
     PropTypes.number,
   ]),

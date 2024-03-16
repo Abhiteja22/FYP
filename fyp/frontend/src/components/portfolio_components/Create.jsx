@@ -19,16 +19,23 @@ export default function Create({ openCreate, onOpenCreate, onCloseCreate }) {
         name: yup.string().required('Name is a required field'),
         risk_aversion: yup.number().required('Risk Aversion is a required field'),
         market_index: yup.string().required('Sector is a required field'),
-        investment_time_period: yup.string().required('Time Period is a required field')
+        investment_time_period: yup.string().required('Time Period is a required field'),
+        sector: yup.string().required('Sector is required')
     })
     const {handleSubmit, reset, setValue, control} = useForm({defaultValues:defaultValues, resolver: yupResolver(schema)})
     const submission = async (data) => {
         try {
+            // Find the option object that matches the submitted market_index value
+            const selectedOption = options.find(option => option.value === data.market_index);
+        
+            // Extract the label from the selected option. If no option is found, default to an empty string or a placeholder value
+            const sectorLabel = selectedOption ? selectedOption.label : '';
             const response = await api.post(`portfolio/`, {
                 name: data.name,
                 risk_aversion: data.risk_aversion,
                 market_index: data.market_index,
                 investment_time_period: data.investment_time_period,
+                sector: sectorLabel
             })
             onCloseCreate()
             window.location.reload();

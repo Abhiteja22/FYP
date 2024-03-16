@@ -2,10 +2,7 @@ import './App.css';
 import { Routes, Route } from 'react-router-dom';
 import Portfolios from './components/portfolio_components/Portfolios';
 import About from './components/About';
-import Create from './components/portfolio_components/Create';
 import MiniDrawer from './components/NavBar';
-import Edit from './components/portfolio_components/Edit';
-import Delete from './components/portfolio_components/Delete';
 import CreatePortfolioAsset from './components/portfolio_components/CreatePortfolioAsset';
 import Chat from './components/Chat';
 import Interact from './components/Interact';
@@ -20,6 +17,7 @@ import Private from './components/Private';
 import Logout from './components/authentication/Logout';
 import Assets from './components/asset_components/Assets';
 import Asset from './components/asset_components/Asset';
+import Portfolio from './components/portfolio_components/Portfolio';
 
 function App() {
   return (
@@ -33,6 +31,7 @@ function App() {
           <Route path='/assets' element={<PrivateRoute> <MiniDrawer content= {<Assets/>} /> </PrivateRoute>}/>
           <Route path='/assets/:id' element={<PrivateRoute> <MiniDrawer content= {<Asset/>} /> </PrivateRoute>}/>
           <Route path='/portfolios' element={<PrivateRoute> <MiniDrawer content= {<Portfolios/>} /> </PrivateRoute>}/>
+          <Route path='/portfolios/:id' element={<PrivateRoute> <MiniDrawer content= {<Portfolio/>} /> </PrivateRoute>}/>
           {/* Previous Routes */}
           <Route path='/private' element={<PrivateRoute> <MiniDrawer content= {<Private/>} /> </PrivateRoute>}/>
           <Route path="/" element={<PrivateRoute> <MiniDrawer content= {<Home/>} /> </PrivateRoute>} />

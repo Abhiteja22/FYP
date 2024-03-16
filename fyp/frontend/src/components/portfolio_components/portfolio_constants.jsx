@@ -36,5 +36,6 @@ export const defaultValues = {
   name: 'untitled',
   risk_aversion: 1.00,
   market_index: '^GSPC',
+  sector: 'General',
   investment_time_period: '1year',
 }

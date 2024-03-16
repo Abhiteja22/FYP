@@ -1,0 +1,51 @@
+import PropTypes from 'prop-types';
+
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+
+// ----------------------------------------------------------------------
+
+export default function MiniWidget({ title, total, icon, color = 'primary', sx, height, ...other }) {
+  return (
+    <Card
+      component={Stack}
+      spacing={3}
+      direction="row"
+      sx={{
+        px: 2,
+        py: 5,
+        borderRadius: 2,
+        width: {},
+        height: height ? height : 'auto',
+        ...sx,
+      }}
+      {...other}
+    >
+      {icon && <Box sx={{ width: 64, height: 64 }}>{icon}</Box>}
+
+      <Stack spacing={0.5} zeroMinWidth>
+        <Typography variant="subtitle2" sx={{ color: 'text.disabled' }}>
+            {title}
+        </Typography>
+        <Typography variant="h4" noWrap>{total ? total : "NA"}</Typography>
+      </Stack>
+    </Card>
+  );
+}
+
+MiniWidget.propTypes = {
+  color: PropTypes.string,
+  icon: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
+  sx: PropTypes.object,
+  title: PropTypes.string,
+  total: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+  ]),
+  height: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+  ]),
+};

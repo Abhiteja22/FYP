@@ -6,7 +6,7 @@ import CardHeader from '@mui/material/CardHeader';
 
 // ----------------------------------------------------------------------
 
-export default function AssetPriceHistory({ title, ...other }) {
+export default function Chart({ title, ...other }) {
 
   return (
     <Card {...other}>
@@ -19,6 +19,6 @@ export default function AssetPriceHistory({ title, ...other }) {
   );
 }
 
-AssetPriceHistory.propTypes = {
+Chart.propTypes = {
   title: PropTypes.string,
 };

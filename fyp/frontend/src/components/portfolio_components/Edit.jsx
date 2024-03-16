@@ -34,10 +34,16 @@ export default function Edit({ openEdit, onOpenEdit, onCloseEdit, Id }) {
     const {handleSubmit, reset, setValue, control} = useForm({defaultValues:defaultValues})
     const submission = async (data) => {
         try {
+            // Find the option object that matches the submitted market_index value
+            const selectedOption = options.find(option => option.value === data.market_index);
+        
+            // Extract the label from the selected option. If no option is found, default to an empty string or a placeholder value
+            const sectorLabel = selectedOption ? selectedOption.label : '';
             const response = await api.put(`portfolio/${Id}/`, {
                 name: data.name,
                 risk_aversion: data.risk_aversion,
                 market_index: data.market_index,
+                sector: sectorLabel,
                 investment_time_period: data.investment_time_period,
             })
             onCloseEdit()

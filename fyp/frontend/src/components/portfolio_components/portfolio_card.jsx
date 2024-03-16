@@ -64,9 +64,9 @@ export default function PortfolioCard({ portfolio }) {
                 />
             </Tooltip>
             <Tooltip title="View">
-                <IconButton color="info" component={Link} to={`delete/${portfolio.id}`}>
+                <IconButton color="info" component={Link} to={`/portfolios/${portfolio.id}`}>
                     <ShowChartIcon />
-                    </IconButton>
+                </IconButton>
             </Tooltip>
         </CardActions>
     </Card>
