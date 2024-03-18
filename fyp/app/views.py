@@ -1,12 +1,13 @@
 import json
 from django.contrib.auth.models import User
 from django.forms.models import model_to_dict
+from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, generics, status
 from rest_framework.decorators import api_view, permission_classes
 from .serializers import *
-from .models import Asset, PortfolioAsset, Portfolio
+from .models import Asset, Portfolio
 from .utils import *
 
 def get_user_by_username(username):
@@ -122,8 +123,8 @@ class PortfolioView(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         queryset = self.get_queryset()
         portfolio = queryset.get(pk=pk)
-        portfolio_assets = portfolio.get_portfolio_assets()
-        additional_details = get_portfolio_details_general(portfolio_assets, portfolio.investment_time_period, portfolio.market_index)
+        transactions = portfolio.get_transactions()
+        additional_details = get_portfolio_details_general(transactions, portfolio.investment_time_period, portfolio.market_index)
         serialized_asset = self.serializer_class(portfolio, context={'request': request}).data
         response_data = {**serialized_asset, **additional_details}
         # serializer = self.serializer_class(portfolio, context={'request': request})
@@ -147,42 +148,56 @@ class PortfolioView(viewsets.ViewSet):
         portfolio.delete()
         return Response(status=204)
     
-class PortfolioAssetView(viewsets.ViewSet):
+class TransactionView(viewsets.ModelViewSet):
+    serializer_class = TransactionSerializer
     permission_classes = [permissions.AllowAny]
-    queryset = PortfolioAsset.objects.all()
-    serializer_class = PortfolioAssetSerializer
 
-    def list(self, request):
-        queryset = PortfolioAsset.objects.all() # Adjust later
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        """
+        Optionally filters the returned transactions by portfolio ID, if provided in the request.
+        """
+        queryset = Transaction.objects.all().order_by('transaction_date')
+        portfolio_id = self.request.query_params.get('portfolio')
+        if portfolio_id is not None:
+            queryset = queryset.filter(portfolio__id=portfolio_id)
+        return queryset
 
-    def create(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=400)
+# class PortfolioAssetView(viewsets.ViewSet):
+#     permission_classes = [permissions.AllowAny]
+#     queryset = PortfolioAsset.objects.all()
+#     serializer_class = PortfolioAssetSerializer
 
-    def retrieve(self, request, pk=None):
-        portfolioAsset = self.queryset.get(pk=pk)
-        serializer = self.serializer_class(portfolioAsset)
-        return Response(serializer.data)
+#     def list(self, request):
+#         queryset = PortfolioAsset.objects.all() # Adjust later
+#         serializer = self.serializer_class(queryset, many=True)
+#         return Response(serializer.data)
 
-    def update(self, request, pk=None):
-        portfolioAsset = self.queryset.get(pk=pk)
-        serializer = self.serializer_class(portfolioAsset, data= request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=400)
+#     def create(self, request):
+#         serializer = self.serializer_class(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         else:
+#             return Response(serializer.errors, status=400)
 
-    def partial_update(self, request, pk=None):
-        pass
+#     def retrieve(self, request, pk=None):
+#         portfolioAsset = self.queryset.get(pk=pk)
+#         serializer = self.serializer_class(portfolioAsset)
+#         return Response(serializer.data)
 
-    def destroy(self, request, pk=None):
-        portfolioAsset = self.queryset.get(pk=pk)
-        portfolioAsset.delete()
-        return Response(status=204)
+#     def update(self, request, pk=None):
+#         portfolioAsset = self.queryset.get(pk=pk)
+#         serializer = self.serializer_class(portfolioAsset, data= request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         else:
+#             return Response(serializer.errors, status=400)
+
+#     def partial_update(self, request, pk=None):
+#         pass
+
+#     def destroy(self, request, pk=None):
+#         portfolioAsset = self.queryset.get(pk=pk)
+#         portfolioAsset.delete()
+#         return Response(status=204)

@@ -2,6 +2,7 @@ import numpy as np
 import yfinance as yf
 from .models import *
 import pyfredapi as pf
+from datetime import datetime
 
 def get_series_fred_api(series_id):
     data = pf.get_series(series_id=series_id, api_key='86163e766108151080f7c69c5a76b5f1')
@@ -129,6 +130,8 @@ def get_asset_expected_return(beta, market_return, risk_free_rate):
     return expected_return
 
 def get_sharpe_ratio(expected_return, std_dev, risk_free_rate):
+    if std_dev == 0:
+        return 0
     sharpe_ratio = (expected_return - risk_free_rate) / std_dev
     return sharpe_ratio
 
@@ -157,19 +160,21 @@ def get_portfolio_value(assets):
     values = {}
     total_value = 0
 
-    for asset in assets:
-        current_price = get_asset_price(asset.asset_ticker)
-        asset_total_value = current_price * float(asset.quantity)
-        if asset.asset_ticker in values:
-            values[asset.asset_ticker] += asset_total_value
+    for asset, quantity in assets.items():
+        current_price = get_asset_price(asset)
+        asset_total_value = current_price * float(quantity)
+        if asset in values:
+            values[asset] += asset_total_value
         else:
-            values[asset.asset_ticker] = asset_total_value
+            values[asset] = asset_total_value
         total_value += asset_total_value
     
     return values, total_value
 
 def get_portfolio_beta(asset_tickers, time_period, market_index, weights):
     # Fetch historical data for the assets and the benchmark
+    if not asset_tickers:
+        return 0
     data = yf.download(asset_tickers + [market_index], period=time_period)['Adj Close']
     
     # Calculate daily returns
@@ -190,28 +195,26 @@ def get_portfolio_beta(asset_tickers, time_period, market_index, weights):
     
     return portfolio_beta
 
-def get_portfolio_stddev(tickers, time_period, weights):
-    # Download historical data
+def get_portfolio_stddev(tickers, time_period, weights, initial_period):
+    if not tickers:
+        return 0
+    if len(tickers) == 1:
+        return get_asset_stddev(tickers[0], initial_period)
     data = yf.download(tickers, period=time_period)['Adj Close']
     
-    # Calculate daily returns
     daily_returns = data.pct_change().dropna()
-    
-    # Calculate covariance matrix of daily returns
     cov_matrix = daily_returns.cov()
-    
-    # Convert weights to a numpy array
     weights = np.array(weights)
-    
-    # Portfolio variance
     portfolio_variance = np.dot(weights.T, np.dot(cov_matrix, weights))
-    
-    # Portfolio standard deviation
     portfolio_stddev = np.sqrt(portfolio_variance)
     
     return portfolio_stddev
 
-def get_portfolio_expected_return(tickers, time_period, weights):
+def get_portfolio_expected_return(tickers, time_period, weights, beta, market_return, risk_free_rate):
+    if not tickers:
+        return 0
+    if len(tickers) == 1:
+        return get_asset_expected_return(beta, market_return, risk_free_rate)
     data = yf.download(tickers, period=time_period)['Adj Close']
     daily_returns = data.pct_change()
     annual_returns = daily_returns.mean() * 252
@@ -220,60 +223,82 @@ def get_portfolio_expected_return(tickers, time_period, weights):
     return portfolio_return
 
 def get_asset_price_by_date(ticker, date):
-    pass
+    stock = yf.Ticker(ticker)
+    start_date = date
+    end_date = datetime.today()
+    data = stock.history(start=start_date, end=end_date)
+    if not data.empty:
+        return data['Close'].iloc[0]
+    else:
+        return None
 
-def get_portfolio_details_general(portfolio_assets, time_period, market_index):
+def get_portfolio_details_general(transactions, time_period, market_index):
     yf_period, yf_interval = get_period_and_interval(time_period)
     risk_free_rate = get_risk_free_rate(time_period)
     market_return = get_expected_market_return(market_index, time_period)
-    values, total_value = get_portfolio_value(portfolio_assets)
+    money_invested = 0
+    money_withdrawn = 0
+    oldest_date_asset_bought = {}
+    assets_held = {}
+    trans_dict = []
+    for transaction in transactions:
+        trans_dict.append({
+            "id": transaction.id,
+            "asset_name": transaction.asset.name,
+            "asset_ticker": transaction.asset.ticker,
+            "transaction_type": transaction.transaction_type,
+            "quantity": transaction.quantity,
+            "transaction_date": transaction.transaction_date,
+            "value": "${:,.2f}".format(transaction.value)
+        })
+        asset = transaction.asset.ticker
+        price = get_asset_price_by_date(asset, transaction.transaction_date)
+        value = price * float(transaction.quantity)
+        transaction_date = transaction.transaction_date
+        if transaction.transaction_type == 'BUY':
+            money_invested += value
+            if asset in assets_held:
+                assets_held[asset] += transaction.quantity
+                if transaction_date < oldest_date_asset_bought[asset]:
+                    oldest_date_asset_bought[asset] = transaction_date
+            else:
+                assets_held[asset] = transaction.quantity
+                oldest_date_asset_bought[asset] = transaction_date
+        elif transaction.transaction_type == 'SELL':
+            money_withdrawn += value
+            assets_held[asset] -= transaction.quantity
+            if assets_held[asset] == 0:
+                del assets_held[asset]
+                del oldest_date_asset_bought[asset]
+
+    values, total_value = get_portfolio_value(assets_held)
     asset_tickers = []
     weights = []
-    portfolio_asset_holding_details = {}
+    current_assets_held = []
     for asset_ticker, value in values.items():
         asset_tickers.append(asset_ticker)
         weight = value / total_value
         weights.append(weight)
-        portfolio_asset_holding_details[asset_ticker] = {}
-        portfolio_asset_holding_details[asset_ticker]['asset_name'] = get_long_name(asset_ticker)
-        portfolio_asset_holding_details[asset_ticker]['weight'] = weight
-        
+        current_assets_held.append({
+            "ticker": asset_ticker,
+            "name": get_long_name(asset_ticker),
+            "quantity": assets_held[asset_ticker],
+            "weight": weight,
+            "purchase_price": "${:,.2f}".format(get_asset_price_by_date(asset_ticker, oldest_date_asset_bought[asset_ticker])),
+            "current_price": "${:,.2f}".format(get_asset_price(asset_ticker))
+        })
+
     beta = get_portfolio_beta(asset_tickers, yf_period, market_index, weights)
-    # historical_prices = get_historical_prices(ticker, time_period, interval)
-    standard_deviation = get_portfolio_stddev(asset_tickers, yf_period, weights)
-    expected_return = get_portfolio_expected_return(asset_tickers, yf_period, weights)
+    standard_deviation = get_portfolio_stddev(asset_tickers, yf_period, weights, time_period)
+    expected_return = get_portfolio_expected_return(asset_tickers, yf_period, weights, beta, market_return, risk_free_rate)
     sharpe_ratio = get_sharpe_ratio(expected_return, standard_deviation, risk_free_rate)
     
-    portfolio_asset_past_transaction_details = {}
-    portfolio_asset_current_transaction_details = {}
-    for asset in portfolio_assets:
-        if asset.date_sold:
-            portfolio_asset_past_transaction_details[asset.id] = {}
-            portfolio_asset_past_transaction_details[asset.id]['ticker'] = asset.asset_ticker 
-            portfolio_asset_past_transaction_details[asset.id]['asset_name'] = asset.asset_name
-            portfolio_asset_past_transaction_details[asset.id]['quantity'] = asset.quantity
-            portfolio_asset_past_transaction_details[asset.id]['date_sold'] = asset.date_sold
-            portfolio_asset_past_transaction_details[asset.id]['selling_price'] = get_asset_price_by_date(asset.asset_ticker, asset.date_sold)
-            portfolio_asset_past_transaction_details[asset.id]['purchase_date'] = asset.date_added
-            portfolio_asset_past_transaction_details[asset.id]['purchase_price'] = get_asset_price_by_date(asset.asset_ticker, asset.date_added)
-            portfolio_asset_past_transaction_details[asset.id]['profit'] = (asset.quantity )
-        else:
-            portfolio_asset_current_transaction_details[asset.id] = {}
-            portfolio_asset_current_transaction_details[asset.id]['ticker'] = asset.asset_ticker 
-            portfolio_asset_current_transaction_details[asset.id]['asset_name'] = asset.asset_name
-            portfolio_asset_current_transaction_details[asset.id]['quantity'] = asset.quantity
-            portfolio_asset_current_transaction_details[asset.id]['current_price'] = get_asset_price(asset.asset_ticker)
-            portfolio_asset_current_transaction_details[asset.id]['purchase_date'] = asset.date_added
-            portfolio_asset_current_transaction_details[asset.id]['initial_value'] = # calculated
-            portfolio_asset_current_transaction_details[asset.id]['purchase_price'] = # calculated
-            portfolio_asset_current_transaction_details[asset.id]['current_value'] = # calculated
-            portfolio_asset_current_transaction_details[asset.id]['profit'] = # calculated
-            portfolio_asset_current_transaction_details[asset.id]['weight'] = # calculated
-    
     return_dict = {
-        'portfolio_asset_past_transaction_details': portfolio_asset_past_transaction_details,
-        'portfolio_asset_current_transaction_details': portfolio_asset_current_transaction_details,
-        'portfolio_asset_holding_details': portfolio_asset_holding_details,
+        'transactions': trans_dict,
+        'current_assets_held': current_assets_held,
+        'money_invested': money_invested,
+        'oldest_date_asset_bought': oldest_date_asset_bought,
+        'money_withdrawn': money_withdrawn,
         'total_value': total_value,
         'beta': beta,
         'sharpe_ratio': sharpe_ratio,

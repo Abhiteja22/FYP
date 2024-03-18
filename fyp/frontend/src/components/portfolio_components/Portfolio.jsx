@@ -6,21 +6,36 @@ import MiniWidget from '../widgets/MiniWidget';
 import LargeWidget from '../widgets/LargeWidget';
 import Chart from '../widgets/Chart';
 import PortfolioAssetTable from './portfolio_asset_table';
+import PortfolioTransactionTable from './portfolio_transaction_table';
 import numeral from 'numeral';
 import Dayjs from 'dayjs';
+import AddAsset from './AddAsset';
+
 
 const Portfolio = () => {
     const param = useParams();
     const portfolioId = param.id
+    const [assets, setAssets] = useState([])
     const [portfolio, setPortfolio] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true)
     const api = useAxios();
+    const GetAssetData = async () => {
+      try {
+          const response = await api.get(`/assets`)
+          setAssets(response.data)
+      } catch (error) {
+          console.log(error)
+          setError(error.response?.data.detail || "An error occurred while fetching the portfolio.")
+      }
+  }
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const response = await api.get(`portfolio/${portfolioId}/`);
+                const response2 = await api.get(`/assets`)
+                setAssets(response2.data)
                 setPortfolio(response.data)
                 setLoading(false)
             } catch (error) {
@@ -29,25 +44,78 @@ const Portfolio = () => {
         };
         fetchData();
     }, []);
+    const profitToDate = portfolio.portfolio_value - portfolio.money_invested + portfolio.money_withdrawn;
+    const profitPercentage = profitToDate / portfolio.portfolio_value;
+    const isProfitPositive = profitPercentage >= 0;
+    useEffect(() => {
+      console.log(portfolio); // This will log whenever `portfolio` changes
+  }, [portfolio]);
+    const [openAdd, setOpenAdd] = useState(false);
 
+    const handleOpenAdd = () => {
+      setOpenAdd(true);
+    };
+
+    const handleCloseAdd = () => {
+      setOpenAdd(false);
+    }
+    const [openEdit, setOpenEdit] = useState(false);
+
+    const handleOpenEdit = () => {
+      setOpenEdit(true);
+    };
+
+    const handleCloseEdit = () => {
+      setOpenEdit(false);
+    }
+    const [openDelete, setOpenDelete] = useState(false);
+
+    const handleOpenDelete = () => {
+      setOpenDelete(true);
+    };
+
+    const handleCloseDelete = () => {
+      setOpenDelete(false);
+    }
     return (
         <Container maxWidth="xl">
         { loading ? <p>Loading data...</p> :
         <Container maxWidth="xl" sx={{ mb: 4 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column'}}>
-            <Typography variant="h4" sx={{ mb: 5 }}>
-                {portfolio.name}
-            </Typography>
-            <Typography variant="h4" sx={{ mb: 5 }}>
-                Created On: {Dayjs(portfolio.creation_date).format('DD MMMM YYYY')}
-            </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                <Typography variant="h4">
+                    {portfolio.name}
+                </Typography>
+                <Box>
+                <AddAsset
+                    openAdd={openAdd}
+                    onOpenAdd={handleOpenAdd}
+                    onCloseAdd={handleCloseAdd}
+                    Id = {portfolio.id}
+                    assets = {assets}
+                    existingAssets={portfolio.current_assets_held}
+                    oldest_date_asset_bought={portfolio.oldest_date_asset_bought}
+                    />
+                  </Box>
+              </Box>
+              <Typography variant="h5" sx={{ mb: 2 }}>
+                  Created On: {Dayjs(portfolio.creation_date).format('DD MMMM YYYY')}
+              </Typography>
             </Box>
         
   
         <Grid container spacing={3}>
             <Grid item xs={12}>
             <PortfolioAssetTable
-                data={portfolio.portfolio_asset_details}
+                data={portfolio.current_assets_held}
+                openEdit={openEdit}
+                onOpenEdit={handleOpenEdit}
+                onCloseEdit={handleCloseEdit}
+                assets={assets}
+                openDelete={openDelete}
+                onOpenDelete={handleOpenDelete}
+                onCloseDelete={handleCloseDelete}
+                Id={portfolio.id}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -57,8 +125,23 @@ const Portfolio = () => {
               color="success"
             />
           </Grid>
-  
           <Grid item xs={12} sm={4}>
+            <MiniWidget
+              title="Invested in Current Holdings"
+              total={numeral(portfolio.money_invested-portfolio.money_withdrawn).format('$0,0.00')}
+              color="info"
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <LargeWidget
+              title="Profit to date"
+              description={numeral(profitToDate).format('$0,0.00')}
+              description2={numeral(profitPercentage).format('0.000%')}
+              positive={isProfitPositive}
+              color="info"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
             <MiniWidget
               title="Beta"
               total={numeral(portfolio.beta).format('0.000')}
@@ -66,7 +149,7 @@ const Portfolio = () => {
             />
           </Grid>
   
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={6}>
             <MiniWidget
               title="Standard Deviation"
               total={numeral(portfolio.standard_deviation).format('0.000%')}
@@ -118,6 +201,7 @@ const Portfolio = () => {
                 description={portfolio.sector}
                 description2={`Based on: ${portfolio.market_index_long_name}`}
                 color="success"
+                positive={true}
             />
           </Grid>
   
@@ -145,6 +229,33 @@ const Portfolio = () => {
               color="info"
             />
           </Grid>
+          <Grid item xs={12}>
+            <PortfolioTransactionTable
+                data={portfolio.transactions}
+                openEdit={openEdit}
+                onOpenEdit={handleOpenEdit}
+                onCloseEdit={handleCloseEdit}
+                assets={assets}
+                openDelete={openDelete}
+                onOpenDelete={handleOpenDelete}
+                onCloseDelete={handleCloseDelete}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <MiniWidget
+              title="Money Invested"
+              total={numeral(portfolio.money_invested).format('$0,0.00')}
+              color="info"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <MiniWidget
+              title="Money Withdrawn"
+              total={numeral(portfolio.money_withdrawn).format('$0,0.00')}
+              color="info"
+            />
+          </Grid>
+          
         </Grid>
         </Container>
         }

@@ -25,7 +25,7 @@ export default function MiniWidget({ title, total, icon, color = 'primary', sx, 
     >
       {icon && <Box sx={{ width: 64, height: 64 }}>{icon}</Box>}
 
-      <Stack spacing={0.5} zeroMinWidth>
+      <Stack spacing={0.5}>
         <Typography variant="subtitle2" sx={{ color: 'text.disabled' }}>
             {title}
         </Typography>

@@ -2,27 +2,36 @@ import { useMemo } from 'react';
 import { MRT_GlobalFilterTextField, MRT_TableBodyCellValue, MRT_TablePagination, MRT_ToolbarAlertBanner, flexRender, useMaterialReactTable } from 'material-react-table';
 import { Box, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import EditTransaction from './EditTransaction';
+import numeral from 'numeral';
+import Dayjs from 'dayjs';
 
-export default function PortfolioAssetTable({ data, openEdit, onOpenEdit, onCloseEdit, assets, openDelete, onOpenDelete, onCloseDelete, Id }) {
+export default function PortfolioTransactionTable({ data, openEdit, onOpenEdit, onCloseEdit, assets, openDelete, onOpenDelete, onCloseDelete }) {
     const columns = useMemo(
         () => [
         {
-            accessorKey: 'ticker',
-            header: 'Ticker',
-            enableGrouping: false,
+            accessorKey: 'asset_name',
+            header: 'Asset Name',
         },
         {
-            accessorKey: 'name',
-            header: 'Name',
-            enableGrouping: false,
+            accessorKey: 'asset_ticker',
+            header: 'Asset Ticker',
         },
         {
             accessorKey: 'quantity',
             header: 'Quantity'
         },
         {
-            accessorKey: 'weight',
-            header: 'Weight'
+            accessorKey: 'value',
+            header: 'Value'
+        },
+        {
+            accessorKey: 'transaction_type',
+            header: 'BUY/SELL'
+        },
+        {
+            accessorKey: 'transaction_date',
+            Cell: ({ value }) => Dayjs(value).format('DD MMMM YYYY'),
+            header: 'Date of Transaction'
         },
         // {
         //     accessorKey: 'action',
@@ -36,7 +45,7 @@ export default function PortfolioAssetTable({ data, openEdit, onOpenEdit, onClos
         //         Id={Id}
         //         assets={assets}
         //         />
-        //     //   <DeleteTransaction />
+        //        <DeleteTransaction />
         //     ),
         //   },
         ],
@@ -45,12 +54,29 @@ export default function PortfolioAssetTable({ data, openEdit, onOpenEdit, onClos
     const table = useMaterialReactTable({
         columns,
         data: data,
-        enablePagination: false,
+        enablePagination: true,
+        initialState: {
+            pagination: { pageSize: 5, pageIndex: 0 },
+          },
+          muiPaginationProps: {
+            rowsPerPageOptions: [5, 10, 15],
+            variant: 'outlined',
+          },
+          paginationDisplayMode: 'pages',
       });
 
       return (
             <Stack sx={{ m: '2rem 0' }}>
-            <Typography variant="h5">Portfolio current holdings:</Typography>
+            <Box
+                sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                }}
+            >
+                <MRT_TablePagination table={table} />
+            </Box>
+            <Typography variant="h5">Transactions History:</Typography>
             <TableContainer>
                 <Table>
                 {/* Use your own markup, customize however you want using the power of TanStack Table */}
@@ -73,7 +99,9 @@ export default function PortfolioAssetTable({ data, openEdit, onOpenEdit, onClos
                 </TableHead>
                 <TableBody>
                     {table.getRowModel().rows.map((row, rowIndex) => (
-                    <TableRow key={row.id} selected={row.getIsSelected()}>
+                    <TableRow key={row.id} selected={row.getIsSelected()} sx={{
+                        backgroundColor: row.original.transaction_type === 'BUY' ? 'darkgreen' : 'red',
+                      }}>
                         {row.getVisibleCells().map((cell, _columnIndex) => (
                         <TableCell align="center" variant="body" key={cell.id}>
                             {/* Use MRT's cell renderer that provides better logic than flexRender */}

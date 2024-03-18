@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 router = DefaultRouter()
 router.register('assets', views.AssetView, basename='assets')
 router.register('portfolio', views.PortfolioView, basename='portfolio')
-router.register('portfolioAsset', views.PortfolioAssetView, basename='portfolioAsset')
+router.register('transaction', views.TransactionView, basename='transactions')
 
 urlpatterns = [
     path('', include(router.urls)),

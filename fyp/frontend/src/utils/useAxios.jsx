@@ -14,7 +14,7 @@ const useAxios = () => {
 
     axiosInstance.interceptors.request.use(async (req) => {
         if (!isAccessTokenExpired(accessToken)) return req;
-
+        
         const response = await getRefreshToken(refreshToken);
 
         setAuthUser(response.access, response.refresh);

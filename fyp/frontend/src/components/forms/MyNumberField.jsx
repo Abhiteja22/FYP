@@ -5,7 +5,9 @@ import { unstable_useForkRef as useForkRef } from '@mui/utils';
 import { Controller } from 'react-hook-form';
 
 const CustomNumberInput = React.forwardRef(function CustomNumberInput(props, ref) {
-  const { onChange, value, ...rest } = props;
+  const { onChange, error, helperText, ...rest } = props;
+  let { value } = props;
+  value = value ?? 0;
 
   const {
     getRootProps,
@@ -47,12 +49,12 @@ const CustomNumberInput = React.forwardRef(function CustomNumberInput(props, ref
       <StyledStepperButton {...decrementProps} className="decrement">
         ▾
       </StyledStepperButton>
-      <StyledInputElement {...inputProps} />
+      <StyledInputElement {...inputProps} error={!!error} helperText={helperText} />
     </StyledInputRoot>
   );
 });
 
-export default function UseNumberInput(props) {
+export default function MyNumberField(props) {
   const {label, placeholder, name, control, width} = props
   return (
     <Controller
@@ -64,7 +66,7 @@ export default function UseNumberInput(props) {
           formState,
       }) => (
        <CustomNumberInput 
-        aria-label="Demo number input"
+        aria-label="Number input"
         placeholder={placeholder}
         value={value}
         sx={{width:{width}}}

@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import *
-from .utils import get_portfolio_value, get_long_name
+from .utils import get_portfolio_value, get_long_name, get_asset_price_by_date
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -70,15 +70,55 @@ class PortfolioSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_portfolio_value(self, obj):
-        portfolio_assets = obj.get_portfolio_assets()
-        values, total_value = get_portfolio_value(portfolio_assets)
+        transactions = obj.get_transactions()
+        assets_held = {}
+        for transaction in transactions:
+            asset = transaction.asset.ticker
+            if transaction.transaction_type == 'BUY':
+                if asset in assets_held:
+                    assets_held[asset] += transaction.quantity
+                else:
+                    assets_held[asset] = transaction.quantity
+            elif transaction.transaction_type == 'SELL':
+                if asset in assets_held:
+                    assets_held[asset] -= transaction.quantity
+                else:
+                    assets_held[asset] = transaction.quantity
+        values, total_value = get_portfolio_value(assets_held)
         return total_value
     
     def get_market_index_long_name(self, obj):
         market_index = obj.market_index
         return get_long_name(market_index)
-
-class PortfolioAssetSerializer(serializers.ModelSerializer):
+    
+class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PortfolioAsset
-        fields = ['id', 'portfolio', 'asset_ticker', 'quantity']
+        model = Transaction
+        fields = ['id', 'portfolio', 'asset', 'transaction_type', 'quantity', 'transaction_date']
+        read_only_fields = ['value']
+
+    def create(self, validated_data):
+        asset = validated_data['asset']
+        transaction_date = validated_data['transaction_date']
+        quantity = validated_data['quantity']
+        
+        price_per_unit = get_asset_price_by_date(asset.ticker, transaction_date)
+        total_value = price_per_unit * float(quantity)
+        validated_data['value'] = total_value
+        transaction = Transaction.objects.create(**validated_data)
+        
+        return transaction
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        instance.value = self.calculate_value(instance)
+        instance.save()
+        
+        return instance
+
+    def calculate_value(self, instance):
+        price_per_unit = get_asset_price_by_date(instance.asset.ticker, instance.transaction_date)
+        total_value = price_per_unit * float(instance.quantity)
+        return total_value

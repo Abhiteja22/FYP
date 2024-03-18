@@ -32,6 +32,16 @@ export const timeOptions = [
     { value: '10year', label: 'Long (10 Year)' },
     { value: '30year', label: 'Retirement (30 Years)' },
 ];
+
+export const transactionOptions = [
+  { value: 'BUY', label: 'Buy' },
+  { value: 'SELL', label: 'Sell' },
+];
+export const defaultValues2 = {
+  asset: 1,
+  quantity: 1.00,
+  transaction_type: 'BUY',
+}
 export const defaultValues = {
   name: 'untitled',
   risk_aversion: 1.00,

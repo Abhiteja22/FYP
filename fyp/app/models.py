@@ -53,8 +53,8 @@ class Portfolio(models.Model):
     def __str__(self):
         return self.name
     
-    def get_portfolio_assets(self):
-        return self.assets.all()
+    def get_transactions(self):
+        return self.transactions.all().order_by('transaction_date')
     
 class Asset(models.Model):
     SECTOR_CHOICES = [
@@ -87,21 +87,39 @@ class Asset(models.Model):
     asset_type = models.CharField(max_length=10, choices=ASSET_TYPE_CHOICES, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.ticker}, {self.name}"
     
-class PortfolioAsset(models.Model):
-    portfolio = models.ForeignKey('Portfolio', on_delete=models.CASCADE, related_name='assets')
-    asset_ticker = models.CharField(max_length=10, null=True, blank=True)
-    asset_name = models.CharField(max_length=100, null=True, blank=True)
+class Transaction(models.Model):
+    BUY = 'BUY'
+    SELL = 'SELL'
+    TRANSACTION_TYPE_CHOICES = [
+        (BUY, 'Buy'),
+        (SELL, 'Sell'),
+    ]
+
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='transactions')
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=4, choices=TRANSACTION_TYPE_CHOICES)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    date_added = models.DateField(auto_now_add=True, null=True)
-    date_sold = models.DateField(null=True, blank=True)
+    transaction_date = models.DateField()
+    value = models.DecimalField(max_digits=15, decimal_places=2)
 
     def __str__(self):
-        return f"{self.asset_ticker} in {self.portfolio.name}"
+        return f"{self.portfolio.name}: {self.transaction_type} {self.quantity} of {self.asset.ticker} on {self.transaction_date}"
     
-    def get_portfolio_assets(self):
-        return self.assets.all()
+# class PortfolioAsset(models.Model):
+#     portfolio = models.ForeignKey('Portfolio', on_delete=models.CASCADE, related_name='assets')
+#     asset_ticker = models.CharField(max_length=10, null=True, blank=True)
+#     asset_name = models.CharField(max_length=100, null=True, blank=True)
+#     quantity = models.DecimalField(max_digits=10, decimal_places=2)
+#     date_added = models.DateField(auto_now_add=True, null=True)
+#     date_sold = models.DateField(null=True, blank=True)
+
+#     def __str__(self):
+#         return f"{self.asset_ticker} in {self.portfolio.name}"
+    
+#     def get_portfolio_assets(self):
+#         return self.assets.all()
 
 # Signal to create or update Profile model whenever User model is updated
 @receiver(post_save, sender=User)
