@@ -17,13 +17,14 @@ const Home = () => {
 const LoggedInView = ({ user }) => {
     return (
         <div>
-            <h1>Welcome {user.username}</h1>
-            <Link to="/private">
+            <h1>Welcome to Riment</h1>
+            <h3>Click on the links to navigate to other pages</h3>
+            {/* <Link to="/private">
                 <button>Private</button>
             </Link>
             <Link to="/logout">
                 <button>Logout</button>
-            </Link>
+            </Link> */}
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import useAxios from '../../utils/useAxios';
-import { Container, Grid, Typography, Box } from '@mui/material';
+import { Container, Grid, Typography, Box, Button } from '@mui/material';
 import MiniWidget from '../widgets/MiniWidget';
 import LargeWidget from '../widgets/LargeWidget';
 import Chart from '../widgets/Chart';
@@ -20,15 +20,6 @@ const Portfolio = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true)
     const api = useAxios();
-    const GetAssetData = async () => {
-      try {
-          const response = await api.get(`/assets`)
-          setAssets(response.data)
-      } catch (error) {
-          console.log(error)
-          setError(error.response?.data.detail || "An error occurred while fetching the portfolio.")
-      }
-  }
 
     useEffect(() => {
         const fetchData = async () => {
@@ -44,9 +35,6 @@ const Portfolio = () => {
         };
         fetchData();
     }, []);
-    const profitToDate = portfolio.portfolio_value - portfolio.money_invested + portfolio.money_withdrawn;
-    const profitPercentage = profitToDate / portfolio.portfolio_value;
-    const isProfitPositive = profitPercentage >= 0;
     useEffect(() => {
       console.log(portfolio); // This will log whenever `portfolio` changes
   }, [portfolio]);
@@ -77,6 +65,15 @@ const Portfolio = () => {
     const handleCloseDelete = () => {
       setOpenDelete(false);
     }
+    const [openOptimize, setOpenOptimize] = useState(false);
+
+    const handleOpenOptimize = () => {
+      setOpenOptimize(true);
+    };
+
+    const handleCloseOptimize = () => {
+      setOpenOptimize(false);
+    }
     return (
         <Container maxWidth="xl">
         { loading ? <p>Loading data...</p> :
@@ -98,9 +95,16 @@ const Portfolio = () => {
                     />
                   </Box>
               </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
               <Typography variant="h5" sx={{ mb: 2 }}>
                   Created On: {Dayjs(portfolio.creation_date).format('DD MMMM YYYY')}
               </Typography>
+              <Box>
+                  <Button variant="contained" component={Link} to={`/optimize/${portfolio.id}`} state={{ portfolio }}>
+                    Analyse Portfolio
+                  </Button>
+                  </Box>
+                </Box>
             </Box>
         
   
@@ -117,6 +121,7 @@ const Portfolio = () => {
                 onCloseDelete={handleCloseDelete}
                 Id={portfolio.id}
             />
+            
           </Grid>
           <Grid item xs={12} sm={4}>
             <MiniWidget
@@ -128,16 +133,16 @@ const Portfolio = () => {
           <Grid item xs={12} sm={4}>
             <MiniWidget
               title="Invested in Current Holdings"
-              total={numeral(portfolio.money_invested-portfolio.money_withdrawn).format('$0,0.00')}
+              total={numeral(portfolio.invested_currently).format('$0,0.00')}
               color="info"
             />
           </Grid>
           <Grid item xs={12} sm={4}>
             <LargeWidget
               title="Profit to date"
-              description={numeral(profitToDate).format('$0,0.00')}
-              description2={numeral(profitPercentage).format('0.000%')}
-              positive={isProfitPositive}
+              description={numeral(portfolio.profit_to_date).format('$0,0.00')}
+              description2={numeral(portfolio.percentage_profit).format('0.000%')}
+              positive={portfolio.percentage_profit >= 0}
               color="info"
             />
           </Grid>
@@ -207,7 +212,7 @@ const Portfolio = () => {
   
           <Grid item xs={12} sm={6}>
             <MiniWidget
-                title="Industry"
+                title="Time Period Goal"
                 total={portfolio.investment_time_period}
                 color="success"
             />

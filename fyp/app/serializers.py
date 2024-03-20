@@ -101,7 +101,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         asset = validated_data['asset']
         transaction_date = validated_data['transaction_date']
         quantity = validated_data['quantity']
-        
+        print(asset.ticker)
         price_per_unit = get_asset_price_by_date(asset.ticker, transaction_date)
         total_value = price_per_unit * float(quantity)
         validated_data['value'] = total_value

@@ -1,6 +1,5 @@
 import json
 from django.contrib.auth.models import User
-from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
@@ -43,12 +42,43 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
-def getAssetsEndPoint(request):
-    if request.method == 'GET':
+def portfolio_optimize(request, portfolio_id):
+    portfolio = get_object_or_404(Portfolio, pk=portfolio_id, user=request.user)
+    transactions = portfolio.get_transactions()
+    time_period = portfolio.investment_time_period
+    
+    # Assuming `optimize_portfolio` is implemented to accept a queryset of transactions and a time_period
+    optimized_weights = optimize_portfolio(transactions, time_period)
+    
+    return Response({'optimized_weights': optimized_weights})
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def riment_ai(request):
+    portfolio = request.data.get('portfolio')
+    if not portfolio:
+        return Response({'error': 'Portfolio data is required.'}, status=400)
+    money_invested = portfolio.get('money_invested') - portfolio.get('money_withdrawn')
+    response = portfolio_details_AI(portfolio.get('current_assets_held'), portfolio.get('total_value'), portfolio.get('beta'), money_invested, portfolio.get('standard_deviation'), portfolio.get('expected_return'), portfolio.get('sharpe_ratio'), portfolio.get('sector'), portfolio.get('investment_time_period'), portfolio.get('risk_aversion'), portfolio.get('market_index'), portfolio.get('market_index_long_name'))
+    
+    return Response({'response': response})
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def suggest_portfolio(request):
+    sector = request.data.get('sector')
+    assets_held = request.data.get('assets_held')
+    risk_aversion = request.data.get('risk_aversion')
+    time_period = request.data.get('time_period')
+    if sector == 'General':
         assets = Asset.objects.all()
-        serializer = AssetSerializer(assets, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response("Invalid request method", status.HTTP_400_BAD_REQUEST)
+    else:
+        assets = Asset.objects.get('Sector')
+    if not assets or not sector or not assets_held or not risk_aversion:
+        return Response({'error': 'Data is required.'}, status=400)
+    response, weights = suggest_portfolio_ai(assets, sector, assets_held, risk_aversion, time_period)
+    
+    return Response({'response': response, 'weights': weights})
 
 @api_view(['GET', 'POST'])
 @permission_classes([permissions.IsAuthenticated])
@@ -68,6 +98,11 @@ def testEndPoint(request):
         except json.JSONDecodeError:
             return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
     return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def notification(request):
+    return 'Notification'
     
 # class based view to register user
 class RegisterView(generics.CreateAPIView):

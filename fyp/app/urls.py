@@ -15,7 +15,11 @@ urlpatterns = [
     path('token/', views.MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('register/', views.RegisterView.as_view(), name='auth_register'),
-    path('', views.getRoutes)
+    path('', views.getRoutes),
+    path('optimize/<int:portfolio_id>/', views.portfolio_optimize, name='portfolio-optimize'),
+    path('rimentai/', views.riment_ai, name='riment-ai'),
+    path('suggest/', views.suggest_portfolio, name='suggest-portfolio'),
+    path('notification/', views.notification, name='notification'),
 ]
 
 # urlpatterns = [
