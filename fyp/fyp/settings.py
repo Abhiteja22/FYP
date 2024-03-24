@@ -33,11 +33,9 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'login'
 
-IEX_API_KEY = "sk_a82134349a734183a61d4c595cff3ccc"
-ALPHA_VANTAGE_API_KEY = "FUPT81G3YM7VYKAX"     # Free API Key: "APFOC2NTCXD3NUKK"
-ALPHA_VANTAGE_QUERY_URL = "https://www.alphavantage.co/query"
-ALPHA_VANTAGE_ANALYTICS_URL = "https://alphavantageapi.co/timeseries/analytics"
-OPENAI_API_KEY = "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"
+
+# Accessing the environment variable
+api_key = os.getenv('MY_API_KEY')
 
 # Application definition
 INSTALLED_APPS = [

@@ -187,7 +187,7 @@ export default function MiniDrawer(props) {
                 <ListItemText primary={'View Portfolios'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
             </ListItem>
-            {/* <ListItem key={'Chatbot'} disablePadding sx={{ display: 'block' }}>
+            <ListItem key={'Chatbot'} disablePadding sx={{ display: 'block' }}>
               <ListItemButton
                   sx={{
                     minHeight: 48,
@@ -209,7 +209,7 @@ export default function MiniDrawer(props) {
                 </ListItemIcon>
                 <ListItemText primary={'Chatbot'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>
-            </ListItem> */}
+            </ListItem>
             
             <ListItem key={'Suggest portfolios'} disablePadding sx={{ display: 'block' }}>
               <ListItemButton

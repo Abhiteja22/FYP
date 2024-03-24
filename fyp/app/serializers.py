@@ -15,7 +15,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add custom claims
         token['username'] = user.username
         token['email'] = user.email
-        # ...
         return token
     
 # Serializer to register user

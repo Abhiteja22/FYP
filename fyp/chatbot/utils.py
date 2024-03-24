@@ -222,7 +222,6 @@ class PortfolioInput(BaseModel):
     ticker_symbols: Dict[TickerInput, QuantityInput]
 
 def get_tools():
-    SERPAPI_KEY = "f0627549432dff35aa32fa8aa1f1e606b22aa354d42b459ef7bf42ae4e3fa9e7"
     search = SerpAPIWrapper(serpapi_api_key=SERPAPI_KEY)
     serp_api_tool = StructuredTool.from_function(
         func=search.run,
@@ -297,7 +296,7 @@ def chatbot(input, user):
             
         ]
     )
-    llm = ChatOpenAI(temperature = 0.0, openai_api_key="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")
+    llm = ChatOpenAI(temperature = 0.0, openai_api_key=)
     llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])
     agent = (
         {

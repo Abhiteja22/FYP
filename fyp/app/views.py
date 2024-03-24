@@ -47,7 +47,6 @@ def portfolio_optimize(request, portfolio_id):
     transactions = portfolio.get_transactions()
     time_period = portfolio.investment_time_period
     
-    # Assuming `optimize_portfolio` is implemented to accept a queryset of transactions and a time_period
     optimized_weights = optimize_portfolio(transactions, time_period)
     
     return Response({'optimized_weights': optimized_weights})
@@ -59,7 +58,18 @@ def riment_ai(request):
     if not portfolio:
         return Response({'error': 'Portfolio data is required.'}, status=400)
     money_invested = portfolio.get('money_invested') - portfolio.get('money_withdrawn')
-    response = portfolio_details_AI(portfolio.get('current_assets_held'), portfolio.get('total_value'), portfolio.get('beta'), money_invested, portfolio.get('standard_deviation'), portfolio.get('expected_return'), portfolio.get('sharpe_ratio'), portfolio.get('sector'), portfolio.get('investment_time_period'), portfolio.get('risk_aversion'), portfolio.get('market_index'), portfolio.get('market_index_long_name'))
+    response = portfolio_details_AI(portfolio.get('current_assets_held'), 
+                                    portfolio.get('total_value'), 
+                                    portfolio.get('beta'), 
+                                    money_invested, 
+                                    portfolio.get('standard_deviation'), 
+                                    portfolio.get('expected_return'), 
+                                    portfolio.get('sharpe_ratio'), 
+                                    portfolio.get('sector'), 
+                                    portfolio.get('investment_time_period'), 
+                                    portfolio.get('risk_aversion'), 
+                                    portfolio.get('market_index'), 
+                                    portfolio.get('market_index_long_name'))
     
     return Response({'response': response})
 
