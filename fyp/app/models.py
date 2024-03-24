@@ -1,16 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+# class CustomUser(AbstractUser):
+#     email = models.EmailField(max_length=200, unique=True)
+
+#     USERNAME_FIELD = 'email'
+#     REQUIRED_FIELDS = []
+    
 # TODO: Remove risk_free_rate and expected_market_return and adjust how data is to be shown
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    risk_aversion = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    investment_time_period = models.CharField(max_length=20, null=True)
-    risk_free_rate = models.DecimalField(max_digits=7, decimal_places=5, null=True, blank=True, help_text="Annual risk-free rate of return")
-    expected_market_return = models.DecimalField(max_digits=7, decimal_places=5, null=True, blank=True, help_text="Annual expected return of the market")
-    market_index = models.CharField(max_length=10, null=True, help_text="Ticker symbol of the market index used for calculations")
+    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
 
     def __str__(self):
         return self.user.username
@@ -19,37 +23,90 @@ class Profile(models.Model):
     def formatted_expected_market_return(self):
         return "{:.3%}".format(self.expected_market_return)
     
+SECTOR_CHOICES = [
+        ('Finance', 'Finance'),
+        ('Healthcare', 'Healthcare'),
+        ('Telecommunications', 'Telecommunications'),
+        ('Basic Materials', 'Basic Materials'),
+        ('Industrials', 'Industrials'),
+        ('Consumer Staples', 'Consumer Staples'),
+        ('Utilities', 'Utilities'),
+        ('Real Estate', 'Real Estate'),
+        ('Energy', 'Energy'),
+        ('Consumer Discretionary', 'Consumer Discretionary'),
+        ('Technology', 'Technology'),
+        ('Miscellaneous', 'Miscellaneous'),
+    ]
+
 class Portfolio(models.Model):
+    INVESTMENT_PERIOD_CHOICES = [
+        ('1month', '1 Month'),
+        ('3month', '3 Months'),
+        ('6month', '6 Months'),
+        ('1year', '1 Year'),
+        ('3year', '3 Years'),
+        ('5year', '5 Years'),
+        ('10year', '10 Years'),
+        ('30year', '30 Years'),
+    ]
+
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('SOLD', 'Sold'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    alpha = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    beta = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    name = models.CharField(max_length=50)
+    risk_aversion = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(4)], null=True, blank=True,)
+    market_index = models.CharField(max_length=10, null=True, blank=True, help_text="Ticker symbol of the market index used for calculations")
+    sector = models.CharField(max_length=100, null=True, blank=True, choices=SECTOR_CHOICES,)
+    investment_time_period = models.CharField(max_length=6, choices=INVESTMENT_PERIOD_CHOICES, null=True)
     creation_date = models.DateField(auto_now_add=True)
+    status = models.CharField(max_length=6, choices=STATUS_CHOICES, null=True, blank=True,)
+    sell_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.name
+    
+    def get_transactions(self):
+        return self.transactions.all().order_by('transaction_date')
     
 class Asset(models.Model):
+    ASSET_TYPE_CHOICES = [
+        ('ETF', 'ETF'),
+        ('Stock', 'Stock'),
+    ]
+
     ticker = models.CharField(max_length=10)
     name = models.CharField(max_length=100)
-    ipoDate = models.DateField(null=True)
-    exchange = models.CharField(max_length=50, null=True)
-    delistingDate = models.DateField(null=True)
-    type = models.CharField(max_length=100, null=True)  # E.g., stocks, bonds, etc.
-    STATUS_CHOICES = [('Active', 'Active'),('Delisted', 'Delisted'),]
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Active', null=True)
-    country = models.CharField(max_length=100, default="USA")
+    exchange = models.CharField(max_length=50, null=True, blank=True)
+    ipoYear = models.IntegerField(null=True, blank=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
+    sector = models.CharField(max_length=50, choices=SECTOR_CHOICES, null=True, blank=True)
+    industry = models.CharField(max_length=100, null=True, blank=True)
+    asset_type = models.CharField(max_length=10, choices=ASSET_TYPE_CHOICES, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.ticker}, {self.name}"
     
-class PortfolioAsset(models.Model):
-    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='assets')
-    asset_ticker = models.CharField(max_length=10, null=True)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    date_added = models.DateField(auto_now_add=True, null=True)
+class Transaction(models.Model):
+    BUY = 'BUY'
+    SELL = 'SELL'
+    TRANSACTION_TYPE_CHOICES = [
+        (BUY, 'Buy'),
+        (SELL, 'Sell'),
+    ]
 
-# Signal to create or update Profile model whenever User model is updated
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name='transactions')
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=4, choices=TRANSACTION_TYPE_CHOICES)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_date = models.DateField()
+    value = models.DecimalField(max_digits=15, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.portfolio.name}: {self.transaction_type} {self.quantity} of {self.asset.ticker} on {self.transaction_date}"
+
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:

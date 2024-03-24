@@ -1,0 +1,32 @@
+import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/auth';
+import Login from './authentication/Login';
+
+const Home = () => {
+    const [isLoggedIn, user] = useAuthStore((state) => [
+        state.isLoggedIn,
+        state.user,
+    ]);
+    return (
+        <div>
+            {isLoggedIn() ? <LoggedInView user={user()} /> : <Login />}
+        </div>
+    );
+};
+
+const LoggedInView = ({ user }) => {
+    return (
+        <div>
+            <h1>Welcome to Riment</h1>
+            <h3>Click on the links to navigate to other pages</h3>
+            {/* <Link to="/private">
+                <button>Private</button>
+            </Link>
+            <Link to="/logout">
+                <button>Logout</button>
+            </Link> */}
+        </div>
+    );
+};
+
+export default Home;
