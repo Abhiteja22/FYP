@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 from pathlib import Path
+import os
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,13 +30,12 @@ ALLOWED_HOSTS = []
 MESSAGE_STORAGE = 'django.contrib.messages.storage.cookie.CookieStorage'
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'main'
+LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'login'
 
-IEX_API_KEY = "sk_a82134349a734183a61d4c595cff3ccc"
-ALPHA_VANTAGE_API_KEY = "FUPT81G3YM7VYKAX"     # Free API Key: "APFOC2NTCXD3NUKK"
-ALPHA_VANTAGE_QUERY_URL = "https://www.alphavantage.co/query"
-ALPHA_VANTAGE_ANALYTICS_URL = "https://alphavantageapi.co/timeseries/analytics"
+
+# Accessing the environment variable
+api_key = os.getenv('MY_API_KEY')
 
 # Application definition
 INSTALLED_APPS = [
@@ -45,21 +46,31 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app',
-    'django_plotly_dash.apps.DjangoPlotlyDashConfig',
-    # 'channels',
-    # 'channels_redis'
+    'chatbot',
+    'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders'
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # The origin of your React app
+    "http://127.0.0.1:3000",
+    # Add other origins as needed
+]
+CORS_ALLOWED_CREDENTIALS = True
+
+# AUTH_USER_MODEL = 'app.CustomUser'
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
     # 'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django_plotly_dash.middleware.BaseMiddleware'
 ]
 
 ROOT_URLCONF = 'fyp.urls'
@@ -128,7 +139,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 # STATICFILES_FINDERS = [
 #     'django_plotly_dash.finders.DashAssetFinder',
 #     'django_plotly_dash.finders.DashComponentFinder'
@@ -159,3 +173,45 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # To enable frames within HTML Documents
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.authentication.TokenAuthentication'
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=50),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}

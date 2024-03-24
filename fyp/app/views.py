@@ -1,200 +1,248 @@
-import requests
-from django.http import HttpResponse, JsonResponse
-from django.template import loader
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.conf import settings
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Asset, PortfolioAsset, Portfolio, Profile
-from .forms import AddToPortfolioForm, UserRegisterForm, ProfileForm, PortfolioForm
-from .utils import calculate_optimal_weights_portfolio, calculate_portfolio_details, get_VaR, get_asset_details, get_expected_market_return, get_linear_regression, get_maximum_drawdown, get_risk_free_rate, get_simple_moving_average, get_sortino_ratio
+import json
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.response import Response
+from rest_framework import viewsets, permissions, generics, status
+from rest_framework.decorators import api_view, permission_classes
+from .serializers import *
+from .models import Asset, Portfolio
+from .utils import *
 
-# Create your views here.
-
-@login_required
-def main(request):
-    template = loader.get_template("main.html")
-    return HttpResponse(template.render())
-
-def register(request):
-    if request.method == 'POST':
-        user_form = UserRegisterForm(request.POST)
-        profile_form = ProfileForm(request.POST)
-        if user_form.is_valid() and profile_form.is_valid():
-            user = user_form.save()
-            # Obtain the existing Profile instance or create a new one if it doesn't exist
-            profile, created = Profile.objects.get_or_create(user=user)
-
-            # Update the profile with form data
-            profile_form = ProfileForm(request.POST, instance=profile)
-            profile = profile_form.save(commit=False)
-            
-            profile.risk_free_rate = get_risk_free_rate(profile.investment_time_period)
-            profile.expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
-
-            profile.save()
-            return redirect('login')
-    else:
-        user_form = UserRegisterForm()
-        profile_form = ProfileForm()
-    return render(request, 'registration/register.html', {'user_form': user_form, 'profile_form': profile_form})
-
-@login_required
-def profile_view(request):
-    profile = request.user.profile
-    profile.risk_free_rate = get_risk_free_rate(profile.investment_time_period)
-    profile.expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
-    profile.save()
-    return render(request, 'profile/profile_view.html', {'profile': profile})
-
-@login_required
-def profile_update(request):
-    if request.method == 'POST':
-        profile_form = ProfileForm(request.POST, instance=request.user.profile)
-        if profile_form.is_valid():
-            profile = profile_form.save(commit=False)
-            profile.risk_free_rate = get_risk_free_rate(profile.investment_time_period)
-            profile.expected_market_return = get_expected_market_return(profile.market_index, profile.investment_time_period)
-            profile.save()
-            return redirect('profile_view')
-    else:
-        profile_form = ProfileForm(instance=request.user.profile)
-    return render(request, 'profile/profile_update.html', {'form': profile_form})
-
-# TODO: Update portfolio creation page to be able to add assets from the page
-@login_required
-def portfolio_create(request):
-    if request.method == 'POST':
-        form = PortfolioForm(request.POST)
-        if form.is_valid():
-            portfolio = form.save(commit=False)
-            portfolio.user = request.user
-            portfolio.save()
-            return redirect('portfolio_list')
-    else:
-        form = PortfolioForm()
-    return render(request, 'portfolio/portfolio_form.html', {'form': form})
-
-# TODO: Update portfolio update page
-@login_required 
-def portfolio_update(request, pk):
-    portfolio = Portfolio.objects.get(pk=pk, user=request.user)
-    if request.method == 'POST':
-        form = PortfolioForm(request.POST, instance=portfolio)
-        if form.is_valid():
-            form.save()
-            return redirect('portfolio_list')
-    else:
-        form = PortfolioForm(instance=portfolio)
-    return render(request, 'portfolio/portfolio_form.html', {'form': form, 'portfolio': portfolio})
-
-# To view list of portfolios
-@login_required
-def portfolio_list(request):
-    portfolios = Portfolio.objects.filter(user=request.user)
-    return render(request, 'portfolio/portfolio_list.html', {'portfolios': portfolios})
-
-# To view portfolios details
-@login_required
-def portfolio_details(request, pk):
-    profile = request.user.profile
-    portfolio = Portfolio.objects.get(pk=pk, user=request.user)
-    # Attach PortfolioAsset instances to each portfolio
-    portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
-    combined_assets = {}
-    for asset in portfolio_assets:
-        if asset.asset_ticker in combined_assets:
-            combined_assets[asset.asset_ticker] += asset.quantity
-        else:
-            combined_assets[asset.asset_ticker] = asset.quantity
-
-    portfolio.portfolio_details = calculate_portfolio_details(combined_assets, profile)
-
-    VaR, CVaR = get_VaR(portfolio_assets)
-    sortino_ratio = get_sortino_ratio(portfolio_assets)
-    maximum_drawdown = get_maximum_drawdown(portfolio_assets)
-    print(f"VaR at 95% confidence level: {VaR}")
-    print(f"CVaR at 95% confidence level: {CVaR}")
-    print(f"Sortino Ratio with Target return 0%: {sortino_ratio}")
-    print(f"Maximum Drawdown: {maximum_drawdown * 100:.2f}%")
-    
-    return render(request, 'portfolio/portfolio_details.html', {'portfolio': portfolio})
-
-@login_required
-def asset_list(request, country='USA'):
-    stocks = Asset.objects.filter(country=country, type="Stock")
-    page = request.GET.get('page', 1)
-    paginator = Paginator(stocks, 100)  # Show 100 stocks per page
-
+def get_user_by_username(username):
     try:
-        stocks = paginator.page(page)
-    except PageNotAnInteger:
-        stocks = paginator.page(1)
-    except EmptyPage:
-        stocks = paginator.page(paginator.num_pages)
+        user = User.objects.get(username=username)
+        return user
+    except User.DoesNotExist:
+        return None
 
-    context = {
-        'stocks': stocks,
-        'country': country
-    }
-    return render(request, 'asset/asset_list.html', context)
+def get_portfolios(username):
+    """
+    Retrieves user's list of portfolios
 
-def asset_detail_view(request, symbol):
-    profile = request.user.profile
-    asset_details = get_asset_details(symbol, profile)  # Fetch detailed info like price, volume, etc.
-    if request.method == "POST":
-        form = AddToPortfolioForm(request.POST)
-        if form.is_valid():
-            portfolio_asset = form.save(commit=False)
-            portfolio_asset.asset_ticker = symbol
-            portfolio_asset.save()
-            # Redirect to a success page or the asset detail page
-            return redirect('portfolio_list')
+    :param username: The username to whom the portfolio belongs.
+    """
+    user = get_user_by_username(username)
+    portfolio = Portfolio.objects.filter(user=user)
+
+    return portfolio
+
+@api_view(['GET'])
+def getRoutes(request):
+    routes = [
+        '/api/token/',
+        '/api/register/',
+        '/api/token/refresh/',
+        '/api/test/'
+    ]
+    return Response(routes)
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def portfolio_optimize(request, portfolio_id):
+    portfolio = get_object_or_404(Portfolio, pk=portfolio_id, user=request.user)
+    transactions = portfolio.get_transactions()
+    time_period = portfolio.investment_time_period
+    
+    optimized_weights = optimize_portfolio(transactions, time_period)
+    
+    return Response({'optimized_weights': optimized_weights})
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def riment_ai(request):
+    portfolio = request.data.get('portfolio')
+    if not portfolio:
+        return Response({'error': 'Portfolio data is required.'}, status=400)
+    money_invested = portfolio.get('money_invested') - portfolio.get('money_withdrawn')
+    response = portfolio_details_AI(portfolio.get('current_assets_held'), 
+                                    portfolio.get('total_value'), 
+                                    portfolio.get('beta'), 
+                                    money_invested, 
+                                    portfolio.get('standard_deviation'), 
+                                    portfolio.get('expected_return'), 
+                                    portfolio.get('sharpe_ratio'), 
+                                    portfolio.get('sector'), 
+                                    portfolio.get('investment_time_period'), 
+                                    portfolio.get('risk_aversion'), 
+                                    portfolio.get('market_index'), 
+                                    portfolio.get('market_index_long_name'))
+    
+    return Response({'response': response})
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def suggest_portfolio(request):
+    sector = request.data.get('sector')
+    assets_held = request.data.get('assets_held')
+    risk_aversion = request.data.get('risk_aversion')
+    time_period = request.data.get('time_period')
+    if sector == 'General':
+        assets = Asset.objects.all()
     else:
-        form = AddToPortfolioForm()
-        # Filter portfolios to those owned by the user
-        form.fields['portfolio'].queryset = Portfolio.objects.filter(user=request.user)
-    return render(request, 'asset/asset_detail.html', {'asset': asset_details, 'symbol': symbol, 'form': form})
-    # asset = Asset.objects.get(symbol=symbol)
+        assets = Asset.objects.get('Sector')
+    if not assets or not sector or not assets_held or not risk_aversion:
+        return Response({'error': 'Data is required.'}, status=400)
+    response, weights = suggest_portfolio_ai(assets, sector, assets_held, risk_aversion, time_period)
+    
+    return Response({'response': response, 'weights': weights})
 
-def portfolio_suggest_weightage(request, portfolio_id):
-    profile = request.user.profile
-    # portfolio = Portfolio.objects.get(id=portfolio_id) # ORIGINAL WAY TO GET Portfolio
-    # Get the portfolio or return a 404 response if not found
-    portfolio = get_object_or_404(Portfolio, id=portfolio_id)
-    portfolio_assets = PortfolioAsset.objects.filter(portfolio=portfolio)
-    asset_list = [asset.asset_ticker for asset in portfolio_assets]
-    unique_assets = list(set(asset_list))
-    unique_assets.sort()
-    zipped_asset_weights = calculate_optimal_weights_portfolio(profile, unique_assets)
-    context = {
-        'portfolio': portfolio,
-        'zipped_weights': zipped_asset_weights,
-    }
-    return render(request, 'portfolio/portfolio_weights.html', context)
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def testEndPoint(request):
+    if request.method == 'GET':
+        data = f"Congratulation {request.user}, your API just responded to GET request"
+        return Response({'response': data}, status=status.HTTP_200_OK)
+    elif request.method == 'POST':
+        try:
+            body = request.body.decode('utf-8')
+            data = json.loads(body)
+            if 'text' not in data:
+                return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
+            text = data.get('text')
+            data = f'Congratulation your API just responded to POST request with text: {text}'
+            return Response({'response': data}, status=status.HTTP_200_OK)
+        except json.JSONDecodeError:
+            return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
+    return Response("Invalid JSON data", status.HTTP_400_BAD_REQUEST)
 
-def search_stocks(request):
-    search_text = request.GET.get('search_text', '')
-    if search_text:
-        # Call Alpha Vantage API
-        response = requests.get(
-            "https://www.alphavantage.co/query",
-            params={
-                "function": "SYMBOL_SEARCH",
-                "keywords": search_text,
-                "apikey": settings.ALPHA_VANTAGE_API_KEY,
-                "entitlement": "delayed"
-            }
-        )
-        if response.status_code == 200:
-            search_results = response.json()['bestMatches']
-            # Process and return the relevant part of the response
-            return JsonResponse(search_results, safe=False)
-    return JsonResponse([], safe=False)
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def notification(request):
+    return 'Notification'
+    
+# class based view to register user
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = [permissions.AllowAny]
+    serializer_class = RegisterSerializer
+        
+class AssetView(viewsets.ViewSet):
+    queryset = Asset.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AssetSerializer
 
-def show_chart(request, symbol):
-    chart = get_simple_moving_average(symbol)
-    predicted_prices_chart = get_linear_regression(symbol)
-    context = {'chart': chart, 'ARIMA': predicted_prices_chart}
-    return render(request, 'asset/asset_dashboard.html', context)
+    def list(self, request):
+        queryset = Asset.objects.all()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        asset = self.queryset.get(pk=pk)
+        additional_details = get_asset_details_general(asset.ticker)
+        serialized_asset = self.serializer_class(asset).data
+        response_data = {**serialized_asset, **additional_details}
+        return Response(response_data)
+    
+class PortfolioView(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = PortfolioSerializer
+
+    def get_queryset(self):
+        """
+        This view should return a list of all the portfolios
+        for the currently authenticated user.
+        """
+        user = self.request.user
+        return Portfolio.objects.filter(user=user)
+
+    def list(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        data = request.data.copy()
+        data['user'] = request.user.pk
+        data['status'] = 'ACTIVE'
+        serializer = self.serializer_class(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def retrieve(self, request, pk=None):
+        queryset = self.get_queryset()
+        portfolio = queryset.get(pk=pk)
+        transactions = portfolio.get_transactions()
+        additional_details = get_portfolio_details_general(transactions, portfolio.investment_time_period, portfolio.market_index)
+        serialized_asset = self.serializer_class(portfolio, context={'request': request}).data
+        response_data = {**serialized_asset, **additional_details}
+        # serializer = self.serializer_class(portfolio, context={'request': request})
+        return Response(response_data)
+
+    def update(self, request, pk=None):
+        queryset = self.get_queryset()
+        portfolio = queryset.get(pk=pk)
+        data = request.data.copy()
+        data['user'] = request.user.pk
+        serializer = self.serializer_class(portfolio, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=400)
+
+    def destroy(self, request, pk=None):
+        queryset = self.get_queryset()
+        portfolio = queryset.get(pk=pk)
+        portfolio.delete()
+        return Response(status=204)
+    
+class TransactionView(viewsets.ModelViewSet):
+    serializer_class = TransactionSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        """
+        Optionally filters the returned transactions by portfolio ID, if provided in the request.
+        """
+        queryset = Transaction.objects.all().order_by('transaction_date')
+        portfolio_id = self.request.query_params.get('portfolio')
+        if portfolio_id is not None:
+            queryset = queryset.filter(portfolio__id=portfolio_id)
+        return queryset
+
+# class PortfolioAssetView(viewsets.ViewSet):
+#     permission_classes = [permissions.AllowAny]
+#     queryset = PortfolioAsset.objects.all()
+#     serializer_class = PortfolioAssetSerializer
+
+#     def list(self, request):
+#         queryset = PortfolioAsset.objects.all() # Adjust later
+#         serializer = self.serializer_class(queryset, many=True)
+#         return Response(serializer.data)
+
+#     def create(self, request):
+#         serializer = self.serializer_class(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         else:
+#             return Response(serializer.errors, status=400)
+
+#     def retrieve(self, request, pk=None):
+#         portfolioAsset = self.queryset.get(pk=pk)
+#         serializer = self.serializer_class(portfolioAsset)
+#         return Response(serializer.data)
+
+#     def update(self, request, pk=None):
+#         portfolioAsset = self.queryset.get(pk=pk)
+#         serializer = self.serializer_class(portfolioAsset, data= request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         else:
+#             return Response(serializer.errors, status=400)
+
+#     def partial_update(self, request, pk=None):
+#         pass
+
+#     def destroy(self, request, pk=None):
+#         portfolioAsset = self.queryset.get(pk=pk)
+#         portfolioAsset.delete()
+#         return Response(status=204)
