@@ -1,4 +1,3 @@
-```
 # Riment - Final Year Project
 
 Riment is a AI powered wealth management application. This document provides instructions for setting up and running the project locally.
