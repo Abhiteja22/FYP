@@ -7,16 +7,22 @@ import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {Link} from 'react-router-dom'
 import ChatIcon from '@mui/icons-material/Chat';
 import AddIcon from '@mui/icons-material/Add';
+import useAxios from '../utils/useAxios';
 
 const Chat = () => {
     const [myData, setMydata] = useState([])
     const [loading, setLoading] = useState(true)
-    const GetData = () => {
-        AxiosInstance.get(`chatbot/chat/`, {headers: {'Content-Type': 'application/json', 'Authorization': 'token 0817b0aacc9a51627b9067e4d5b110c26caa20f6'}}).then((res) => {
-            setMydata(res.data)
-            console.log(res.data)
-            setLoading(false)
-        })
+    const api = useAxios();
+    const GetData = async () => {
+        const data = await api.get(`chatbot/chat/`)
+        // AxiosInstance.get(`chatbot/chat/`, {headers: {'Content-Type': 'application/json', 'Authorization': 'token 0817b0aacc9a51627b9067e4d5b110c26caa20f6'}}).then((res) => {
+        //     setMydata(res.data)
+        //     console.log(res.data)
+        //     setLoading(false)
+        // })
+        setMydata(data)
+        console.log(data)
+        setLoading(false)
     }
 
     useEffect(() => {

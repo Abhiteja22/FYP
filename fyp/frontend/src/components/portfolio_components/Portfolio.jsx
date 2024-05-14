@@ -161,7 +161,7 @@ const Portfolio = () => {
               color="warning"
             />
           </Grid>
-          <Grid item xs={12} sm={6} sx={{ display: { lg: 'none' } }}>
+          <Grid item xs={12} sm={6}>
             <MiniWidget
                 title="Expected Return"
                 total={numeral(portfolio.expected_return).format('0.000%')}
@@ -169,7 +169,7 @@ const Portfolio = () => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} sx={{ display: { lg: 'none' } }}>
+           <Grid item xs={12} sm={6} > {/*sx={{ display: { lg: 'none' } }} */}
             <MiniWidget
                 title="Sharpe Ratio"
                 total={numeral(portfolio.sharpe_ratio).format('0.000')}
@@ -177,7 +177,7 @@ const Portfolio = () => {
             />
           </Grid>
 
-          <Grid item lg={4} sx={{ display: { xs: 'none', lg: 'block' } }} container spacing={3} direction="column" justifyContent="space-between" alignItems="center">
+          {/* <Grid item lg={4} sx={{ display: { xs: 'none', lg: 'block' } }} container spacing={3} direction="column" justifyContent="space-between" alignItems="center">
             <Grid item xs={4}>
                 <MiniWidget
                     title="Expected Return"
@@ -192,13 +192,13 @@ const Portfolio = () => {
                     color="success"
                 />
             </Grid>
-          </Grid>
+          </Grid> */}
   
-          <Grid item xs={12} lg={8}>
+          {/* <Grid item xs={12} lg={8}>
             <Chart
               title="Price History"
             />
-          </Grid>
+          </Grid> */}
   
           <Grid item xs={12} sm={6}>
             <LargeWidget

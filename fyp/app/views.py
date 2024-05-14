@@ -80,7 +80,7 @@ def suggest_portfolio(request):
     assets_held = request.data.get('assets_held')
     risk_aversion = request.data.get('risk_aversion')
     time_period = request.data.get('time_period')
-    if sector == 'General':
+    if sector == 'Technology' or sector == 'General':
         assets = Asset.objects.all()
     else:
         assets = Asset.objects.get('Sector')
@@ -156,13 +156,14 @@ class PortfolioView(viewsets.ViewSet):
 
     def create(self, request):
         data = request.data.copy()
-        data['user'] = request.user.pk
+        data['user'] = 12#request.user.pk
         data['status'] = 'ACTIVE'
         serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         else:
+            print(serializer.errors)
             return Response(serializer.errors, status=400)
 
     def retrieve(self, request, pk=None):

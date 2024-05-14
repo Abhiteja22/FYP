@@ -22,6 +22,7 @@ import CardTravelIcon from '@mui/icons-material/CardTravel';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 import {Link, useLocation} from 'react-router-dom';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const drawerWidth = 240;
 
@@ -220,7 +221,7 @@ export default function MiniDrawer(props) {
                   }}
                   component={Link}
                   to="/"
-                  selected={"/" === path}
+                  selected={"/suggest" === path}
                 >
                 <ListItemIcon
                   sx={{
@@ -278,7 +279,7 @@ export default function MiniDrawer(props) {
                     justifyContent: 'center',
                   }}
                 >
-                <TipsAndUpdatesIcon/>
+                <LogoutIcon/>
                 </ListItemIcon>
                 <ListItemText primary={'LOGOUT'} sx={{ opacity: open ? 1 : 0 }} />
               </ListItemButton>

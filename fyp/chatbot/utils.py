@@ -296,7 +296,7 @@ def chatbot(input, user):
             
         ]
     )
-    llm = ChatOpenAI(temperature = 0.0, openai_api_key=)
+    llm = ChatOpenAI(temperature = 0.0)
     llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])
     agent = (
         {

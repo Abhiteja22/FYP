@@ -9,7 +9,7 @@ export const marks = [
     },
   ];
 export const options = [
-    { value: '^GSPC', label: 'General' },
+    { value: '^GSPC', label: 'Technology' },
     { value: '^DJUSFN', label: 'Finance' },
     { value: '^NBI', label: 'Healthcare' },
     { value: '^NDXT', label: 'Technology' },

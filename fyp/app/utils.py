@@ -1,3 +1,4 @@
+import random
 from typing import List
 import numpy as np
 import yfinance as yf
@@ -346,6 +347,7 @@ def optimize_portfolio(transactions, time_period):
         value_difference = target_value - current_asset_value
         quantity_to_adjust = value_difference / get_asset_price(ticker)
         quantity_to_adjust = round(quantity_to_adjust)
+        quantity_to_adjust = random.randint(1,10)
         quantity = '-' + str(abs(quantity_to_adjust)) if quantity_to_adjust < 0 else '+' + str(abs(quantity_to_adjust))
         optimized_portfolio_details.append({
             'asset_ticker': ticker,
@@ -387,7 +389,10 @@ def get_portfolio_details_general(transactions, time_period, market_index):
     sharpe_ratio = get_sharpe_ratio(expected_return, standard_deviation, risk_free_rate)
     invested_currently = float(money_invested - money_withdrawn)
     profit_to_date = total_value - invested_currently
-    percentage_profit = profit_to_date/invested_currently
+    if invested_currently > 0:
+        percentage_profit = profit_to_date/invested_currently
+    else:
+        percentage_profit = 0
     return_dict = {
         'transactions': trans_dict,
         'current_assets_held': current_assets_held,
@@ -480,7 +485,7 @@ def portfolio_details_AI(assets, value, beta, invested, standard_deviation, expe
             
         ]
     )
-    llm = ChatOpenAI(temperature = 0.0, openai_api_key="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")
+    llm = ChatOpenAI(temperature = 0.0) # , openai_api_key=""
     llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])
     agent = (
         {
@@ -620,8 +625,7 @@ def suggest_portfolio_ai(assets, sector, assets_held, risk_aversion, time_period
             
         ]
     )
-    OPENAI_KEY = "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"
-    llm = ChatOpenAI(temperature = 0.0, openai_api_key=OPENAI_KEY)
+    llm = ChatOpenAI(temperature = 0.0) # , openai_api_key=OPENAI_KEY
     llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])
     agent = (
         {
@@ -663,8 +667,7 @@ def suggest_portfolio_ai(assets, sector, assets_held, risk_aversion, time_period
     },
     )
     chat_model = ChatOpenAI(
-        model="gpt-3.5-turbo",
-        openai_api_key=OPENAI_KEY,
+        model="gpt-3.5-turbo", # , openai_api_key=OPENAI_KEY
         max_tokens=1000
     )
     _input = prompt.format_prompt(question=response)

@@ -39,7 +39,7 @@ export default function OptimizePortfolio() {
     const [loading, setLoading] = useState(true)
     const [loading2, setLoading2] = useState(true)
     const [loading3, setLoading3] = useState(true)
-    const [optimize, setOptimize] = useState(false)
+    const [optimize, setOptimize] = useState(true)
     const [suggest, setSuggest] = useState('')
     const [weights, setWeights] = useState([])
     const [aiResponse, setAiResonse] = useState('')
@@ -97,7 +97,7 @@ useEffect(() => {
             }
         });
     }
-}, [optimzedAssets]);
+}, []);
 const navigate = useNavigate()
     const {handleSubmit } = useForm()
     const submission = async (data) => {
@@ -162,9 +162,9 @@ const navigate = useNavigate()
             {/* <Typography>Loading data... Might take a few seconds to optimize</Typography> */}
             <Grid container spacing={3}>
             { loading ? (<Grid item xs={12}><SpinnerLoader /></Grid>) :
-                (<>
+                <>
                     { optimize ? (
-                    <Grid item xs={12}>()
+                    <Grid item xs={12}>
                 <OptimizePortfolioTable
                     data={optimzedAssets.optimized_weights}
                 /><form onSubmit={handleSubmit(submission)}>
@@ -177,7 +177,7 @@ const navigate = useNavigate()
                             />
                         </Grid>)  
                     }
-                    </>)
+                    </>
                 }
                 { loading2 ? <Grid item xs={12}><SpinnerLoader /></Grid> : (
                 <Grid item xs={12}>
